@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Diretórios que não precisam de indexação excessiva da UI
+Disallow: /api/
+
+Sitemap: https://seusite.com.br/sitemap.xml

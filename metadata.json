@@ -1,0 +1,5 @@
+{
+  "name": "Global Health Monitor",
+  "description": "A real-time global health, pandemic, and disease tracking platform.",
+  "requestFramePermissions": ["geolocation"]
+}
