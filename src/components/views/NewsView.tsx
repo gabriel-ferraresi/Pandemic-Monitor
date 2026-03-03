@@ -88,11 +88,9 @@ export function NewsView({ data, targetNewsId, onClearTarget }: { data: GlobalIn
         {activeTab === 'external' && (
           <div className="flex flex-col gap-4 relative">
             {[...(data.externalNews || [])].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map((news, index) => {
-              // Dorking System: Aplicar "when:14d" para notícias da IA não-vips que sejam declaradas como PRESENTE.
-              const dorkModifier = news.isHistorical ? '' : ' when:14d';
-              const safeUrl = !news.url || news.url === '#'
-                ? `https://news.google.com/search?q=${encodeURIComponent(news.title + (news.source ? ' ' + news.source : '') + dorkModifier)}`
-                : news.url;
+              // Algoritmo Anti-Alucinação (Protocolo Cronos V2): Ignorar URLs da IA e forçar Query Paramétrica.
+              // Garante que o usuário sempre ache a fonte real via Dork do Google News focada nos últimos 7 dias.
+              const safeUrl = `https://www.google.com/search?q=${encodeURIComponent(news.title)}&newwindow=1&tbm=nws${!news.isHistorical ? '&tbs=qdr:w' : ''}`;
 
               return (
                 <a key={`${news.id || news.title}-${index}`} id={`news-${news.id || news.title}`} href={safeUrl} target="_blank" rel="noopener noreferrer" className={cn("p-4 rounded-xl border transition-all group block", news.isHistorical ? "bg-slate-50 dark:bg-zinc-900/30 border-slate-200 dark:border-white/5 opacity-75 hover:opacity-100" : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/30")}>
