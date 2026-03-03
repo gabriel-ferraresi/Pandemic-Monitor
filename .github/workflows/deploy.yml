@@ -43,6 +43,8 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             cd ${{ secrets.SERVER_DESTINATION_PATH }}
             npm install --production
             pm2 reload ecosystem.config.cjs --env production || pm2 start ecosystem.config.cjs --env production
