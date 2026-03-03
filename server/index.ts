@@ -17,16 +17,16 @@ const PORT = process.env.PORT || 3001;
 
 // ====== TECH86: APPSEC & PERFORMANCE ======
 
-// 1. Blindagem de Cabeçalhos HTTP (Anti-XSS, Clickjacking, MIME sniffing)
+// 1. Blindagem de Cabeçalhos HTTP (Calibrada para WebGL / React VITE)
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
-            defaultSrc: ["'self'"],
-            connectSrc: ["'self'", "https://disease.sh", "https://api.github.com"],
-            imgSrc: ["'self'", "data:", "blob:", "https://images.unsplash.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Necessário para WebGL ThreeJS
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            workerSrc: ["'self'", "blob:"], // Necessário para WebWorkers hexBin
+            defaultSrc: ["'self'", "*"],
+            connectSrc: ["'self'", "*", "data:", "blob:"], // Libera requests API e WebSockets
+            imgSrc: ["'self'", "data:", "blob:", "*"], // Libera texturas do ThreeJS e imagens externas
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "*"], // Essencial para React Vite, PM2 e Three.js
+            styleSrc: ["'self'", "'unsafe-inline'", "*"], // Essencial para estilos inline dinâmicos e Tailwind
+            workerSrc: ["'self'", "blob:", "*"], // Essencial para Globe.gl
         },
     },
     crossOriginEmbedderPolicy: false
