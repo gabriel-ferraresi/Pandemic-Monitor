@@ -8,7 +8,7 @@ import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
 import { NavigationSidebar } from "./components/NavigationSidebar";
 import { GlobeComponent } from "./components/GlobeComponent";
-import { BottomTicker } from "./components/BottomTicker";
+import { BottomTicker, TickerItem } from "./components/BottomTicker";
 import { getLiveHealthIntelligence, GlobalIntelligence, FALLBACK_DATA } from "./services/healthIntelligence";
 import { OutbreaksView } from "./components/views/OutbreaksView";
 import { ThreatsView } from "./components/views/ThreatsView";
@@ -29,6 +29,7 @@ export default function App() {
   const [activeView, setActiveView] = useState('global');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [timeRange, setTimeRange] = useState('live');
+  const [targetNewsId, setTargetNewsId] = useState<string | null>(null);
 
   // Settings State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -114,6 +115,17 @@ export default function App() {
     setSelectedEvent(eventPoint);
   };
 
+  const getTickerItems = (): TickerItem[] => {
+    const items: (TickerItem & { date: string })[] = [];
+    if (healthData.aiArticles) {
+      healthData.aiArticles.forEach(a => items.push({ id: a.id || a.title, title: `IA RELATÓRIO: ${a.title}`, type: 'ai', date: a.date || '' }));
+    }
+    if (healthData.externalNews) {
+      healthData.externalNews.forEach(n => items.push({ id: n.id || n.title, title: `MUNDO: ${n.title}`, type: 'external', date: n.date || '' }));
+    }
+    return items.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 11);
+  };
+
   return (
     <div className="flex flex-col h-screen w-screen transition-colors duration-500 bg-slate-50 dark:bg-[#050505] overflow-hidden font-sans text-slate-700 dark:text-zinc-400 selection:bg-emerald-500/30 selection:text-white">
       {/* Background radial glow */}
@@ -146,14 +158,20 @@ export default function App() {
         {activeView === 'local' && <LocalView data={healthData} userLocation={userLocation} onAlertClick={(item, type) => handleEventSelect(item, type)} />}
         {activeView === 'outbreaks' && <OutbreaksView data={healthData} onAlertClick={(item) => handleEventSelect(item, 'outbreak')} />}
         {activeView === 'threats' && <ThreatsView data={healthData} onAlertClick={(item) => handleEventSelect(item, 'anomaly')} />}
-        {activeView === 'news' && <NewsView data={healthData} />}
+        {activeView === 'news' && <NewsView data={healthData} targetNewsId={targetNewsId} onClearTarget={() => setTargetNewsId(null)} />}
         {activeView === 'vaccines' && <VaccinesView />}
         {activeView === 'pathogens' && <PathogensView />}
 
         <TimelineFilter activeRange={timeRange} onChangeRange={setTimeRange} isEventSelected={!!selectedEvent} />
 
       </main>
-      <BottomTicker news={healthData.tickerNews} />
+      <BottomTicker
+        news={getTickerItems()}
+        onNewsClick={(item) => {
+          setActiveView('news');
+          setTargetNewsId(item.id);
+        }}
+      />
 
       <SettingsModal
         isOpen={isSettingsOpen}

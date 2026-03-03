@@ -1,10 +1,34 @@
 import { Newspaper, FileText, Globe, ExternalLink } from "lucide-react";
 import { GlobalIntelligence } from "../../services/healthIntelligence";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn, formatToBRDate } from "../../utils";
 
-export function NewsView({ data }: { data: GlobalIntelligence }) {
+export function NewsView({ data, targetNewsId, onClearTarget }: { data: GlobalIntelligence; targetNewsId?: string | null; onClearTarget?: () => void }) {
   const [activeTab, setActiveTab] = useState<'ai' | 'external'>('ai');
+
+  useEffect(() => {
+    if (targetNewsId) {
+      // Find which tab it belongs to to auto-switch if necessary
+      const isAi = data.aiArticles?.some(a => (a.id || a.title) === targetNewsId);
+      const isExt = data.externalNews?.some(n => (n.id || n.title) === targetNewsId);
+
+      if (isAi && activeTab !== 'ai') setActiveTab('ai');
+      else if (isExt && activeTab !== 'external') setActiveTab('external');
+
+      // Scroll to element after a short render delay
+      setTimeout(() => {
+        const el = document.getElementById(`news-${targetNewsId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-2', 'ring-emerald-500', 'ring-offset-4', 'dark:ring-offset-black', 'transition-all', 'duration-500', 'z-20');
+          setTimeout(() => {
+            el.classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-4', 'dark:ring-offset-black', 'z-20');
+            if (onClearTarget) onClearTarget();
+          }, 3000); // Remove highlight after 3 seconds
+        }
+      }, 50);
+    }
+  }, [targetNewsId, data]);
 
   return (
     <div className="w-[600px] h-full flex flex-col bg-white/90 dark:bg-black/80 backdrop-blur-2xl border-l border-slate-200 dark:border-white/10 z-10 relative shadow-[-4px_0_24px_rgba(0,0,0,0.05)] dark:shadow-[-4px_0_24px_rgba(0,0,0,0.5)] transition-colors duration-500">
@@ -33,9 +57,9 @@ export function NewsView({ data }: { data: GlobalIntelligence }) {
 
       <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
         {activeTab === 'ai' && (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 relative">
             {[...(data.aiArticles || [])].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map((article, index) => (
-              <div key={`${article.id}-${index}`} className="p-5 rounded-xl bg-gradient-to-br from-slate-50 to-transparent dark:from-white/5 border border-slate-200 dark:border-white/10 transition-colors">
+              <div key={`${article.id || article.title}-${index}`} id={`news-${article.id || article.title}`} className="p-5 rounded-xl bg-gradient-to-br from-slate-50 to-transparent dark:from-white/5 border border-slate-200 dark:border-white/10 transition-colors">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[10px] font-bold px-2 py-1 rounded border uppercase tracking-wider bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-500/20 dark:border-blue-500/50 dark:text-blue-400 transition-colors">
                     {article.theme}
@@ -55,9 +79,9 @@ export function NewsView({ data }: { data: GlobalIntelligence }) {
         )}
 
         {activeTab === 'external' && (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 relative">
             {[...(data.externalNews || [])].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map((news, index) => (
-              <a key={`${news.id}-${index}`} href={news.url} target="_blank" rel="noopener noreferrer" className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/30 transition-all group block">
+              <a key={`${news.id || news.title}-${index}`} id={`news-${news.id || news.title}`} href={news.url} target="_blank" rel="noopener noreferrer" className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/30 transition-all group block">
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="text-slate-800 dark:text-white font-bold group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors pr-4">{news.title}</h3>
                   <ExternalLink className="w-4 h-4 text-slate-400 dark:text-zinc-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex-shrink-0 transition-colors" />

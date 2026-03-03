@@ -25,6 +25,10 @@
   }
 }
 
+.ticker-marquee {
+  animation: marquee var(--marquee-duration, 30s) linear infinite;
+}
+
 /* Custom Scrollbar for a technical feel */
 ::-webkit-scrollbar {
   width: 4px;
