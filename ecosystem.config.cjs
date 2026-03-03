@@ -4,8 +4,8 @@ module.exports = {
             name: 'global-health-monitor',
             script: 'npm',
             args: 'start',
-            instances: 'max', // Scale to all cpu cores
-            exec_mode: 'cluster',
+            instances: 1, // Single-thread for SQLite and Data Integrity
+            exec_mode: 'fork', // Resolves 502 PM2 Crash with 'tsx' and 'npm start'
             autorestart: true,
             watch: false,
             max_memory_restart: '1G',
