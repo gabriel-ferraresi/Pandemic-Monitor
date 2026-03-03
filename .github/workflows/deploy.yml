@@ -47,6 +47,13 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             cd ${{ secrets.SERVER_DESTINATION_PATH }}
+            
+            # Elite Premium Engineering: Injeção Segura de Váriaveis na Nuvem (Blindado contra logs)
+            echo "PORT=3001" > .env
+            echo "NODE_ENV=production" >> .env
+            echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+            echo "NVIDIA_API_KEY=${{ secrets.NVIDIA_API_KEY }}" >> .env
+            
             npm install --omit=dev
             if ! command -v pm2 &> /dev/null; then npm install -g pm2; fi
             pm2 delete global-health-monitor || true
