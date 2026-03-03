@@ -93,14 +93,42 @@ async function callKimi() {
 }
 
 function parseJSON(text: string) {
-    const jsonMatch = text.match(/\`\`\`json\n([\s\S]*?)\n\`\`\`/) || text.match(/\`\`\`\n([\s\S]*?)\n\`\`\`/);
-    if (jsonMatch && jsonMatch[1]) {
-        return JSON.parse(jsonMatch[1]);
+    try {
+        let cleanText = text.trim();
+        // Remove markdown tags if any
+        if (cleanText.startsWith('```json')) cleanText = cleanText.substring(7);
+        else if (cleanText.startsWith('```')) cleanText = cleanText.substring(3);
+        if (cleanText.endsWith('```')) cleanText = cleanText.substring(0, cleanText.length - 3);
+
+        let parsed = JSON.parse(cleanText.trim());
+
+        // Sanitização Ativa (Elite Fallback): forçamos os nós a existirem para não quebrar a UI
+        parsed.outbreaks = Array.isArray(parsed.outbreaks) ? parsed.outbreaks : [];
+        parsed.anomalies = Array.isArray(parsed.anomalies) ? parsed.anomalies : [];
+        parsed.predictions = Array.isArray(parsed.predictions) ? parsed.predictions : [];
+        parsed.aiArticles = Array.isArray(parsed.aiArticles) ? parsed.aiArticles : [];
+        parsed.externalNews = Array.isArray(parsed.externalNews) ? parsed.externalNews : [];
+        parsed.tickerNews = Array.isArray(parsed.tickerNews) ? parsed.tickerNews : [];
+
+        // Assegura booleanos puros no Protocolo Cronos (IA as vezes manda como string "false")
+        parsed.aiArticles = parsed.aiArticles.map((a: any) => ({
+            ...a,
+            isHistorical: a.isHistorical === true || a.isHistorical === "true"
+        }));
+
+        parsed.externalNews = parsed.externalNews.map((n: any) => ({
+            ...n,
+            isHistorical: n.isHistorical === true || n.isHistorical === "true"
+        }));
+
+        return parsed;
+    } catch (err) {
+        console.error("[Tech86 Parser] TEXTO BRUTO GERADO PELA IA QUE CAUSOU A FALHA:", text);
+        throw err;
     }
-    return JSON.parse(text);
 }
 
-export async function updateIntelligenceDatabase() {
+export async function updateIntelligenceDatabase(): Promise<{ success: boolean, reason?: string, rawText?: string }> {
     let rawResponse = "";
     let provider = "None";
 
@@ -133,10 +161,9 @@ export async function updateIntelligenceDatabase() {
             } catch (errorKimi: any) {
                 console.error(`[Tech86] Falha catastrófica em todos os provedores AI. Mantendo snapshot anterior.`);
 
-                // Tratamento de Falhas Premium: Database keeping old snapshot
                 db.prepare('UPDATE sync_status SET status = ?, message = ?, last_sync = ? WHERE id = 1')
                     .run('degraded', 'Sinal de telemetria degradado. Exibindo último snapshot validado.', new Date().toISOString());
-                return false;
+                return { success: false, reason: 'Todos os provedores de IA (Gemini, DeepSeek, Kimi) comunicaram falha de API ou Time-out.', rawText: errorKimi.message };
             }
         }
     }
@@ -157,11 +184,11 @@ export async function updateIntelligenceDatabase() {
         })();
 
         console.log("[Tech86] Banco de dados inteligência atualizado com sucesso.");
-        return true;
-    } catch (parseError) {
-        console.error("[Tech86] Erro ao fazer o parsing ou inserir no BD:", parseError);
+        return { success: true };
+    } catch (parseError: any) {
+        console.error(`[Tech86] Falha catastrófica de Parsing JSON. A IA retornou sintaxe inválida. Motivo: ${parseError.message}`);
         db.prepare('UPDATE sync_status SET status = ?, message = ?, last_sync = ? WHERE id = 1')
             .run('degraded', 'Falha na formatação de dados. Exibindo snapshot validado.', new Date().toISOString());
-        return false;
+        return { success: false, reason: `Erro crítico de Parse JSON. A IA alucinou fora do Type. Motivo: ${parseError.message || parseError}`, rawText: rawResponse.substring(0, 1000) };
     }
 }

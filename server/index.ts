@@ -74,11 +74,15 @@ app.get('/api/admin/force-sync', async (req, res) => {
 
     console.log('[Tech86 Admin] Bypass da Cronjob ativado. Forçando varredura global da IA...');
     try {
-        const success = await updateIntelligenceDatabase();
-        if (success) {
+        const result = await updateIntelligenceDatabase();
+        if (result.success) {
             res.json({ message: '✨ Sincronização de Elite concluída com sucesso. O Data Lake foi atualizado com noovas anomalias e notícias.' });
         } else {
-            res.status(500).json({ error: 'Os motores de IA reportaram falha na requisição. Verifique os logs do servidor.' });
+            res.status(500).json({
+                error: 'Os motores de IA reportaram falha na requisição. Verifique os logs do servidor.',
+                hardware_reason: result.reason,
+                ai_raw_response_preview: result.rawText
+            });
         }
     } catch (err: any) {
         console.error('[Tech86 Admin] Erro Crítico no bypass:', err);
