@@ -51,3 +51,6 @@ jobs:
             if ! command -v pm2 &> /dev/null; then npm install -g pm2; fi
             pm2 reload ecosystem.config.cjs --env production || pm2 start ecosystem.config.cjs --env production
             pm2 save
+            sleep 5
+            pm2 status
+            pm2 logs global-health-monitor --lines 50 --nostream

@@ -19,8 +19,17 @@ const PORT = process.env.PORT || 3001;
 
 // 1. Blindagem de Cabeçalhos HTTP (Anti-XSS, Clickjacking, MIME sniffing)
 app.use(helmet({
-    contentSecurityPolicy: false, // Permitido para instanciar WebGL/ThreeJS da CDN local
-    crossOriginEmbedderPolicy: false // Necessário livre para WebWorkers rodarem HexBins fluidos
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            connectSrc: ["'self'", "https://disease.sh", "https://api.github.com"],
+            imgSrc: ["'self'", "data:", "blob:", "https://images.unsplash.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Necessário para WebGL ThreeJS
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            workerSrc: ["'self'", "blob:"], // Necessário para WebWorkers hexBin
+        },
+    },
+    crossOriginEmbedderPolicy: false
 }));
 
 // 2. Compressão GZIP/Brotli (Redução em massiva nos JSONS gigantescos e WebGL)
@@ -57,7 +66,12 @@ if (!row) {
 // API Routes
 app.get('/api/health-data', (req, res) => {
     try {
-        const { range } = req.query; // 'live' | '24h' | '7d' | '30d'
+        let { range } = req.query; // 'live' | '24h' | '7d' | '30d'
+
+        // Sanitização contra Parameter Pollution (XSS Vetor)
+        if (typeof range !== 'string') {
+            range = 'live';
+        }
 
         // Determina o intervalo de tempo para o Motor Cumulativo
         const now = new Date();
@@ -90,12 +104,14 @@ app.get('/api/health-data', (req, res) => {
             // Assim as notícias e dados mais recém atualizados esmagam os antigos em caso de duplicidade
             [...snapshots].reverse().forEach(snap => {
                 const d = JSON.parse(snap.data_json);
-                d.outbreaks?.forEach((o: any) => allOutbreaks.set(o.disease + o.country, o));
-                d.anomalies?.forEach((a: any) => allAnomalies.set(a.description, a));
-                d.predictions?.forEach((p: any) => allPredictions.set(p.disease + p.region, p));
-                d.aiArticles?.forEach((art: any) => allArticles.set(art.title, art));
-                d.externalNews?.forEach((n: any) => allNews.set(n.title, n));
-                d.tickerNews?.forEach((t: string) => allTicker.add(t));
+
+                // Tipo seguro: A IA pode ser falha, nós não. Verificamos se o nó existe e é um vetor array iterável.
+                if (Array.isArray(d.outbreaks)) d.outbreaks.forEach((o: any) => allOutbreaks.set(o.disease + o.country, o));
+                if (Array.isArray(d.anomalies)) d.anomalies.forEach((a: any) => allAnomalies.set(a.description, a));
+                if (Array.isArray(d.predictions)) d.predictions.forEach((p: any) => allPredictions.set(p.disease + p.region, p));
+                if (Array.isArray(d.aiArticles)) d.aiArticles.forEach((art: any) => allArticles.set(art.title, art));
+                if (Array.isArray(d.externalNews)) d.externalNews.forEach((n: any) => allNews.set(n.title, n));
+                if (Array.isArray(d.tickerNews)) d.tickerNews.forEach((t: string) => allTicker.add(t));
             });
 
             // Convertemos de volta para os Arrays massivos acumulados
