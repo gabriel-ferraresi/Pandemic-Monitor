@@ -57,14 +57,6 @@ jobs:
             npm install --omit=dev
             if ! command -v pm2 &> /dev/null; then npm install -g pm2; fi
             pm2 delete global-health-monitor || true
-            
-            # Elite Premium Engineering: Trojan Horse Data Migration
-            # O Node PM2 acaba de morrer, e a database local está destrancada. Injetamos o Snapshot de Conhecimento por cima.
-            if [ -f migration_lake.sqlite ]; then
-              mv migration_lake.sqlite health_data.sqlite
-              echo "✅ Data Lake transferido e sobreposto com sucesso!"
-            fi
-            
             pm2 start ecosystem.config.cjs --env production
             pm2 save
             sleep 5
