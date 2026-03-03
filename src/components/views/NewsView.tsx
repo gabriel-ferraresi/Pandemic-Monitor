@@ -59,15 +59,22 @@ export function NewsView({ data, targetNewsId, onClearTarget }: { data: GlobalIn
         {activeTab === 'ai' && (
           <div className="flex flex-col gap-6 relative">
             {[...(data.aiArticles || [])].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map((article, index) => (
-              <div key={`${article.id || article.title}-${index}`} id={`news-${article.id || article.title}`} className="p-5 rounded-xl bg-gradient-to-br from-slate-50 to-transparent dark:from-white/5 border border-slate-200 dark:border-white/10 transition-colors">
+              <div key={`${article.id || article.title}-${index}`} id={`news-${article.id || article.title}`} className={cn("p-5 rounded-xl border transition-colors", article.isHistorical ? "bg-slate-50 dark:bg-zinc-900/50 border-slate-200 dark:border-white/5 opacity-80" : "bg-gradient-to-br from-slate-50 to-transparent dark:from-white/5 border-slate-200 dark:border-white/10")}>
+
+                {article.isHistorical && (
+                  <div className="mb-4 inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-900/20 dark:border-amber-700/50 rounded">
+                    📜 ARQUIVO HISTÓRICO: {article.historicalPeriod}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-bold px-2 py-1 rounded border uppercase tracking-wider bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-500/20 dark:border-blue-500/50 dark:text-blue-400 transition-colors">
+                  <span className={cn("text-[10px] font-bold px-2 py-1 rounded border uppercase tracking-wider transition-colors", article.isHistorical ? "bg-slate-100 border-slate-200 text-slate-500 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-400" : "bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-500/20 dark:border-blue-500/50 dark:text-blue-400")}>
                     {article.theme}
                   </span>
                   <span className="text-xs font-mono text-slate-500 dark:text-zinc-500 transition-colors">{formatToBRDate(article.date)}</span>
                 </div>
-                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-3 transition-colors">{article.title}</h3>
-                <div className="text-sm text-slate-600 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap transition-colors">
+                <h3 className={cn("text-xl font-bold mb-3 transition-colors", article.isHistorical ? "text-slate-600 dark:text-zinc-300" : "text-slate-800 dark:text-white")}>{article.title}</h3>
+                <div className="text-sm text-slate-600 dark:text-zinc-400 leading-relaxed whitespace-pre-wrap transition-colors">
                   {article.content}
                 </div>
               </div>
@@ -81,16 +88,24 @@ export function NewsView({ data, targetNewsId, onClearTarget }: { data: GlobalIn
         {activeTab === 'external' && (
           <div className="flex flex-col gap-4 relative">
             {[...(data.externalNews || [])].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map((news, index) => {
-              // Se a IA devolver "#" ou url vazia, criamos um link de busca blindado no Google News para validar a matéria real:
+              // Dorking System: Aplicar "when:14d" para notícias da IA não-vips que sejam declaradas como PRESENTE.
+              const dorkModifier = news.isHistorical ? '' : ' when:14d';
               const safeUrl = !news.url || news.url === '#'
-                ? `https://news.google.com/search?q=${encodeURIComponent(news.title + (news.source ? ' ' + news.source : ''))}`
+                ? `https://news.google.com/search?q=${encodeURIComponent(news.title + (news.source ? ' ' + news.source : '') + dorkModifier)}`
                 : news.url;
 
               return (
-                <a key={`${news.id || news.title}-${index}`} id={`news-${news.id || news.title}`} href={safeUrl} target="_blank" rel="noopener noreferrer" className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/30 transition-all group block">
+                <a key={`${news.id || news.title}-${index}`} id={`news-${news.id || news.title}`} href={safeUrl} target="_blank" rel="noopener noreferrer" className={cn("p-4 rounded-xl border transition-all group block", news.isHistorical ? "bg-slate-50 dark:bg-zinc-900/30 border-slate-200 dark:border-white/5 opacity-75 hover:opacity-100" : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/30")}>
+
+                  {news.isHistorical && (
+                    <div className="mb-3 inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 border border-amber-200 dark:text-amber-500 dark:bg-amber-900/20 dark:border-amber-800/50 rounded">
+                      📜 ARQUIVO: {news.historicalPeriod}
+                    </div>
+                  )}
+
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-slate-800 dark:text-white font-bold group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors pr-4">{news.title}</h3>
-                    <ExternalLink className="w-4 h-4 text-slate-400 dark:text-zinc-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex-shrink-0 transition-colors" />
+                    <h3 className={cn("font-bold transition-colors pr-4", news.isHistorical ? "text-slate-600 dark:text-zinc-400 group-hover:text-amber-600 dark:group-hover:text-amber-400" : "text-slate-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400")}>{news.title}</h3>
+                    <ExternalLink className={cn("w-4 h-4 flex-shrink-0 transition-colors", news.isHistorical ? "text-slate-400 dark:text-zinc-600 group-hover:text-amber-500" : "text-slate-400 dark:text-zinc-500 group-hover:text-blue-600 dark:group-hover:text-blue-400")} />
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-500 dark:text-zinc-400 transition-colors">{news.source}</span>

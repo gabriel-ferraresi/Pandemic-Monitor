@@ -34,6 +34,8 @@ export interface AIArticle {
   content: string;
   date: string;
   theme: string;
+  isHistorical?: boolean;
+  historicalPeriod?: string;
 }
 
 export interface ExternalNews {
@@ -42,6 +44,8 @@ export interface ExternalNews {
   source: string;
   url: string;
   date: string;
+  isHistorical?: boolean;
+  historicalPeriod?: string;
 }
 
 export interface GlobalIntelligence {
@@ -98,12 +102,21 @@ export const FALLBACK_DATA: GlobalIntelligence = {
       content: 'Nossos modelos detectaram um aumento preocupante nas menções a infecções por Influenza A (H5N1) em mamíferos marinhos e aves de criação no Sudeste Asiático. Embora a transmissão sustentada entre humanos ainda não tenha sido confirmada, a taxa de mutação do vírus sugere uma janela de oportunidade cada vez menor para contenção.',
       date: 'Hoje',
       theme: 'H5N1'
+    },
+    {
+      id: 'art3',
+      title: 'Revisão Histórica: A Rápida Escalada da COVID-19 em Wuhan (2020)',
+      content: 'Uma análise retrospectiva demonstra como alertas precoces de pneumonia atípica evoluíram rapidamente para um cenário de pandemia. As barreiras sanitárias da época foram sobrecarregadas em semanas, reforçando a necessidade atual de vigilância sobre quaisquer sub-variantes anômalas mapeadas por nossos modelos preditivos.',
+      date: 'Arquivado',
+      theme: 'SARS-CoV-2 (Histórico)',
+      isHistorical: true,
+      historicalPeriod: 'Surto Originário Trágico de 2020'
     }
   ],
   externalNews: [
     { id: 'en1', title: 'Casos de Mpox voltam a subir no Brasil, alerta Ministério da Saúde', source: 'G1', url: '#', date: 'Há 2 horas' },
     { id: 'en2', title: 'OMS emite novo alerta sobre gripe aviária', source: 'Reuters', url: '#', date: 'Há 5 horas' },
-    { id: 'en3', title: 'Investigação sobre pneumonia misteriosa na China', source: 'BBC News', url: '#', date: 'Há 1 dia' }
+    { id: 'en3', title: 'A misteriosa pneumonia que preocupa a China', source: 'BBC News', url: '#', date: '6 de jan. de 2020', isHistorical: true, historicalPeriod: 'Início Pandemia Covid-19' }
   ]
 };
 
