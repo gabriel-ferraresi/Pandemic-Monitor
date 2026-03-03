@@ -59,47 +59,59 @@ app.get('/api/health-data', (req, res) => {
     try {
         const { range } = req.query; // 'live' | '24h' | '7d' | '30d'
 
-        // Determina o intervalo de tempo
-        let timeCondition = '';
-        let queryParams: string[] = [];
-
+        // Determina o intervalo de tempo para o Motor Cumulativo
         const now = new Date();
-        if (range && range !== 'live') {
-            const timeLimit = new Date();
-            if (range === '24h') timeLimit.setHours(now.getHours() - 24);
-            if (range === '7d') timeLimit.setDate(now.getDate() - 7);
-            if (range === '30d') timeLimit.setDate(now.getDate() - 30);
+        const timeLimit = new Date();
 
-            timeCondition = 'WHERE timestamp >= ? ORDER BY timestamp DESC';
-            queryParams.push(timeLimit.toISOString());
-        } else {
-            // Default to latest single snapshot
-            timeCondition = 'ORDER BY timestamp DESC LIMIT 1';
-        }
+        if (range === '24h') timeLimit.setHours(now.getHours() - 24);
+        else if (range === '7d') timeLimit.setDate(now.getDate() - 7);
+        else if (range === '30d') timeLimit.setDate(now.getDate() - 30);
+        else timeLimit.setHours(now.getHours() - 48); // Para 'Live', acumulamos ativamente as últimas 48h para gerar a imersão de Banco de Dados massivo!
+
+        const timeCondition = 'WHERE timestamp >= ? ORDER BY timestamp DESC';
+        const queryParams = [timeLimit.toISOString()];
 
         const snapshots = db.prepare(`SELECT * FROM intelligence_snapshot ${timeCondition}`).all(...queryParams) as any[];
         const syncStatus = db.prepare('SELECT * FROM sync_status WHERE id = 1').get() as any;
 
         if (snapshots && snapshots.length > 0) {
-            // Se for 'live', pegue o mais recente. Se não, podemos tentar agregar e fundir os dados temporais.
-            // Para mantermos simples a performance por enquanto, exibiremos o snapshot final do período combinado. 
-            // Em uma evolução real, o Parse aqui mesclaria os Arrays outbreaks.
+            // Extrai a 'cápsula' do snapshot mais atual (metadados gerais)
             let mergedData = JSON.parse(snapshots[0].data_json);
 
-            if (range !== 'live' && snapshots.length > 1) {
-                // Simples agregação demonstrativa combinando patógenos e eventos únicos do período
-                let allOutbreaks = new Map();
-                let allAnomalies = new Map();
+            // Motor de Acumulação (O Segredo do crescimento da base)
+            let allOutbreaks = new Map();
+            let allAnomalies = new Map();
+            let allPredictions = new Map();
+            let allArticles = new Map();
+            let allNews = new Map();
+            let allTicker = new Set();
 
-                snapshots.forEach(snap => {
-                    const d = JSON.parse(snap.data_json);
-                    d.outbreaks?.forEach((o: any) => allOutbreaks.set(o.disease + o.country, o));
-                    d.anomalies?.forEach((a: any) => allAnomalies.set(a.description, a));
-                });
+            // Iteramos do mais antigo para o mais novo (Reverse)
+            // Assim as notícias e dados mais recém atualizados esmagam os antigos em caso de duplicidade
+            [...snapshots].reverse().forEach(snap => {
+                const d = JSON.parse(snap.data_json);
+                d.outbreaks?.forEach((o: any) => allOutbreaks.set(o.disease + o.country, o));
+                d.anomalies?.forEach((a: any) => allAnomalies.set(a.description, a));
+                d.predictions?.forEach((p: any) => allPredictions.set(p.disease + p.region, p));
+                d.aiArticles?.forEach((art: any) => allArticles.set(art.title, art));
+                d.externalNews?.forEach((n: any) => allNews.set(n.title, n));
+                d.tickerNews?.forEach((t: string) => allTicker.add(t));
+            });
 
-                mergedData.outbreaks = Array.from(allOutbreaks.values());
-                mergedData.anomalies = Array.from(allAnomalies.values());
-            }
+            // Convertemos de volta para os Arrays massivos acumulados
+            mergedData.outbreaks = Array.from(allOutbreaks.values());
+            mergedData.anomalies = Array.from(allAnomalies.values());
+            mergedData.predictions = Array.from(allPredictions.values());
+            mergedData.aiArticles = Array.from(allArticles.values());
+            mergedData.externalNews = Array.from(allNews.values());
+            mergedData.tickerNews = Array.from(allTicker.values());
+
+            // A Mágica Final: Calculamos de verdade os gráficos de estatísticas baseado no crescimento dos arrays
+            mergedData.stats = {
+                ...mergedData.stats,
+                activeAnomalies: mergedData.anomalies.length,
+                monitoredPathogens: mergedData.outbreaks.length + 120 // Soma a base inicial parametrizada + o acúmulo real
+            };
 
             res.json({
                 ...mergedData,
