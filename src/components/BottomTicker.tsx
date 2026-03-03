@@ -9,7 +9,12 @@ export function BottomTicker({ news }: { news: string[] }) {
       </div>
 
       <div className="flex-1 overflow-hidden relative" style={{ maskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)' }}>
-        <div className="animate-marquee flex whitespace-nowrap w-max text-xs font-mono hover:[animation-play-state:paused]">
+        <div
+          className="flex whitespace-nowrap w-max text-xs font-mono hover:[animation-play-state:paused]"
+          style={{
+            animation: `marquee ${Math.max(30, news.join(" ").length * 0.15)}s linear infinite`
+          }}
+        >
           <div className="flex gap-12 pr-12">
             {news.map((item, i) => (
               <span key={i} className={i % 2 === 0 ? "text-slate-600 dark:text-zinc-400" : "text-emerald-600 dark:text-emerald-400"}>
