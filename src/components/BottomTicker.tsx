@@ -12,7 +12,10 @@ export function BottomTicker({ news }: { news: string[] }) {
         <div
           className="flex whitespace-nowrap w-max text-xs font-mono hover:[animation-play-state:paused]"
           style={{
-            animation: `marquee ${Math.max(30, news.join(" ").length * 0.15)}s linear infinite`
+            animationDuration: `${Math.max(30, news.join(" ").length * 0.15)}s`,
+            animationName: 'marquee',
+            animationTimingFunction: 'linear',
+            animationIterationCount: 'infinite'
           }}
         >
           <div className="flex gap-12 pr-12">
