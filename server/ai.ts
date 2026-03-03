@@ -57,7 +57,7 @@ async function callGemini() {
     if (!geminiBase) geminiBase = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
     const response = await geminiBase.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
         contents: getPrompt(),
         config: {
             temperature: 0.3,
@@ -71,7 +71,7 @@ async function callDeepSeek() {
     if (!nvidiaOpenAI) nvidiaOpenAI = new OpenAI({ apiKey: process.env.NVIDIA_API_KEY, baseURL: 'https://integrate.api.nvidia.com/v1' });
 
     const completion = await nvidiaOpenAI.chat.completions.create({
-        model: "deepseek-ai/deepseek-coder-6.7b-instruct",
+        model: "meta/llama-3.1-70b-instruct",
         messages: [{ role: "user", content: getPrompt() }],
         temperature: 0.3,
         max_tokens: 4000,
@@ -84,7 +84,7 @@ async function callKimi() {
     if (!nvidiaOpenAI) nvidiaOpenAI = new OpenAI({ apiKey: process.env.NVIDIA_API_KEY, baseURL: 'https://integrate.api.nvidia.com/v1' });
 
     const completion = await nvidiaOpenAI.chat.completions.create({
-        model: "moonshot-v1-8k",
+        model: "meta/llama-3.1-8b-instruct",
         messages: [{ role: "user", content: getPrompt() }],
         temperature: 0.3,
         max_tokens: 4000,
