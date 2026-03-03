@@ -63,6 +63,29 @@ if (!row) {
     updateIntelligenceDatabase();
 }
 
+// Admin Tech86: Rota Secreta para Acionamento Manual da IA
+app.get('/api/admin/force-sync', async (req, res) => {
+    const { token } = req.query;
+
+    // Proteção rigorosa para evitar ataques de esgotamento de créditos da IA
+    if (token !== 'Tech86Admin') {
+        return res.status(401).json({ error: 'Acesso negado. Token de administração inválido.' });
+    }
+
+    console.log('[Tech86 Admin] Bypass da Cronjob ativado. Forçando varredura global da IA...');
+    try {
+        const success = await updateIntelligenceDatabase();
+        if (success) {
+            res.json({ message: '✨ Sincronização de Elite concluída com sucesso. O Data Lake foi atualizado com noovas anomalias e notícias.' });
+        } else {
+            res.status(500).json({ error: 'Os motores de IA reportaram falha na requisição. Verifique os logs do servidor.' });
+        }
+    } catch (err: any) {
+        console.error('[Tech86 Admin] Erro Crítico no bypass:', err);
+        res.status(500).json({ error: 'Erro interno no servidor ao tentar bypass magnético.' });
+    }
+});
+
 // API Routes
 app.get('/api/health-data', (req, res) => {
     try {
