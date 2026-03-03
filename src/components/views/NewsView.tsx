@@ -80,18 +80,25 @@ export function NewsView({ data, targetNewsId, onClearTarget }: { data: GlobalIn
 
         {activeTab === 'external' && (
           <div className="flex flex-col gap-4 relative">
-            {[...(data.externalNews || [])].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map((news, index) => (
-              <a key={`${news.id || news.title}-${index}`} id={`news-${news.id || news.title}`} href={news.url} target="_blank" rel="noopener noreferrer" className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/30 transition-all group block">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-slate-800 dark:text-white font-bold group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors pr-4">{news.title}</h3>
-                  <ExternalLink className="w-4 h-4 text-slate-400 dark:text-zinc-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex-shrink-0 transition-colors" />
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500 dark:text-zinc-400 transition-colors">{news.source}</span>
-                  <span className="font-mono text-slate-500 dark:text-zinc-500 transition-colors">{formatToBRDate(news.date)}</span>
-                </div>
-              </a>
-            ))}
+            {[...(data.externalNews || [])].sort((a, b) => (b.date || '').localeCompare(a.date || '')).map((news, index) => {
+              // Se a IA devolver "#" ou url vazia, criamos um link de busca blindado no Google News para validar a matéria real:
+              const safeUrl = !news.url || news.url === '#'
+                ? `https://news.google.com/search?q=${encodeURIComponent(news.title + (news.source ? ' ' + news.source : ''))}`
+                : news.url;
+
+              return (
+                <a key={`${news.id || news.title}-${index}`} id={`news-${news.id || news.title}`} href={safeUrl} target="_blank" rel="noopener noreferrer" className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/30 transition-all group block">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="text-slate-800 dark:text-white font-bold group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors pr-4">{news.title}</h3>
+                    <ExternalLink className="w-4 h-4 text-slate-400 dark:text-zinc-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex-shrink-0 transition-colors" />
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500 dark:text-zinc-400 transition-colors">{news.source}</span>
+                    <span className="font-mono text-slate-500 dark:text-zinc-500 transition-colors">{formatToBRDate(news.date)}</span>
+                  </div>
+                </a>
+              )
+            })}
             {(!data.externalNews || data.externalNews.length === 0) && (
               <div className="text-center text-slate-400 dark:text-zinc-500 py-10 transition-colors">Nenhuma notícia externa encontrada.</div>
             )}
