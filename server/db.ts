@@ -21,6 +21,12 @@ db.exec(`
     status TEXT NOT NULL,
     message TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS merged_intelligence (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    data_json TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
 `);
 
 export default db;

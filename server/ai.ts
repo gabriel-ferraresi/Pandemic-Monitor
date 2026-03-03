@@ -129,6 +129,94 @@ function parseJSON(text: string) {
     }
 }
 
+/**
+ * Normaliza uma string para uso como chave de deduplicação.
+ * Remove acentos, espaços extras, e converte para minúsculas.
+ */
+function normalizeKey(str: string): string {
+    return (str || '').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+/**
+ * Faz merge incremental de novos dados da IA na tabela merged_intelligence.
+ * Esta é a Fonte Única de Verdade — todos os clientes leem do resultado final.
+ */
+function mergeIntoMasterTable(newData: any, provider: string) {
+    // 1. Carregar dados acumulados atuais (se existirem)
+    const existingRow = db.prepare('SELECT data_json FROM merged_intelligence WHERE id = 1').get() as any;
+    let existing: any = null;
+
+    if (existingRow) {
+        try {
+            existing = JSON.parse(existingRow.data_json);
+        } catch {
+            existing = null; // Se corrompido, recomeça do zero
+        }
+    }
+
+    // 2. Preparar Maps de acumulação com dados existentes
+    const allOutbreaks = new Map<string, any>();
+    const allAnomalies = new Map<string, any>();
+    const allPredictions = new Map<string, any>();
+    const allArticles = new Map<string, any>();
+    const allNews = new Map<string, any>();
+    const allTicker = new Set<string>();
+
+    // Carregar dados existentes primeiro (dados antigos)
+    if (existing) {
+        if (Array.isArray(existing.outbreaks)) existing.outbreaks.forEach((o: any) => allOutbreaks.set(normalizeKey(o.disease) + '|' + normalizeKey(o.country), o));
+        if (Array.isArray(existing.anomalies)) existing.anomalies.forEach((a: any) => allAnomalies.set(normalizeKey(a.description).substring(0, 80), a));
+        if (Array.isArray(existing.predictions)) existing.predictions.forEach((p: any) => allPredictions.set(normalizeKey(p.disease) + '|' + normalizeKey(p.region), p));
+        if (Array.isArray(existing.aiArticles)) existing.aiArticles.forEach((art: any) => allArticles.set(normalizeKey(art.title), art));
+        if (Array.isArray(existing.externalNews)) existing.externalNews.forEach((n: any) => allNews.set(normalizeKey(n.title), n));
+        if (Array.isArray(existing.tickerNews)) existing.tickerNews.forEach((t: string) => allTicker.add(t));
+    }
+
+    // Sobrescrever com dados novos (dados mais recentes vencem)
+    if (Array.isArray(newData.outbreaks)) newData.outbreaks.forEach((o: any) => allOutbreaks.set(normalizeKey(o.disease) + '|' + normalizeKey(o.country), o));
+    if (Array.isArray(newData.anomalies)) newData.anomalies.forEach((a: any) => allAnomalies.set(normalizeKey(a.description).substring(0, 80), a));
+    if (Array.isArray(newData.predictions)) newData.predictions.forEach((p: any) => allPredictions.set(normalizeKey(p.disease) + '|' + normalizeKey(p.region), p));
+    if (Array.isArray(newData.aiArticles)) newData.aiArticles.forEach((art: any) => allArticles.set(normalizeKey(art.title), art));
+    if (Array.isArray(newData.externalNews)) newData.externalNews.forEach((n: any) => allNews.set(normalizeKey(n.title), n));
+    if (Array.isArray(newData.tickerNews)) newData.tickerNews.forEach((t: string) => allTicker.add(t));
+
+    // 3. Montar o objeto final determinístico
+    const outbreaks = Array.from(allOutbreaks.values());
+    const anomalies = Array.from(allAnomalies.values());
+    const predictions = Array.from(allPredictions.values());
+    const aiArticles = Array.from(allArticles.values());
+    const externalNews = Array.from(allNews.values());
+    const tickerNews = Array.from(allTicker.values());
+
+    // 4. Calcular stats DETERMINÍSTICAS (sem número mágico!)
+    // monitoredPathogens = quantidade de DOENÇAS ÚNICAS em todos os surtos
+    const uniqueDiseases = new Set(outbreaks.map((o: any) => normalizeKey(o.disease)));
+
+    const merged = {
+        outbreaks,
+        anomalies,
+        predictions,
+        aiArticles,
+        externalNews,
+        tickerNews,
+        stats: {
+            globalThreatLevel: newData.stats?.globalThreatLevel || existing?.stats?.globalThreatLevel || 'MODERADO',
+            monitoredPathogens: uniqueDiseases.size,
+            activeAnomalies: anomalies.length,
+            predictionsCount: predictions.length,
+        },
+        provider,
+        lastMerge: new Date().toISOString(),
+    };
+
+    // 5. Persistir na Fonte Única de Verdade
+    const mergedJson = JSON.stringify(merged);
+    db.prepare('INSERT OR REPLACE INTO merged_intelligence (id, data_json, updated_at) VALUES (1, ?, ?)')
+        .run(mergedJson, new Date().toISOString());
+
+    console.log(`[Tech86 Merge] Fonte Única atualizada: ${outbreaks.length} surtos, ${anomalies.length} anomalias, ${predictions.length} previsões, ${uniqueDiseases.size} doenças únicas.`);
+}
+
 export async function updateIntelligenceDatabase(): Promise<{ success: boolean, reason?: string, rawText?: string }> {
     let rawResponse = "";
     let provider = "None";
@@ -175,9 +263,12 @@ export async function updateIntelligenceDatabase(): Promise<{ success: boolean, 
 
         // Begin Transaction
         db.transaction(() => {
-            // Save entire snapshot into historical timeline
+            // Save snapshot for historical audit trail
             db.prepare('INSERT INTO intelligence_snapshot (data_json, timestamp, provider) VALUES (?, ?, ?)')
                 .run(JSON.stringify(data), new Date().toISOString(), provider);
+
+            // CORE: Merge incremental na Fonte Única de Verdade
+            mergeIntoMasterTable(data, provider);
 
             // Update sync status
             db.prepare('INSERT OR REPLACE INTO sync_status (id, last_sync, status, message) VALUES (1, ?, ?, ?)')
