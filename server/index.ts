@@ -20,16 +20,17 @@ const PORT = process.env.PORT || 3001;
 // 1. Blindagem de Cabeçalhos HTTP (CSP restrita a domínios explícitos)
 const trustedDomains = ['https://pandemic-monitor.tech86.com.br', 'https://tech86.com.br'];
 const apiDomains = ['https://integrate.api.nvidia.com', 'https://generativelanguage.googleapis.com', 'https://disease.sh'];
+const cdnDomains = ['https://unpkg.com', 'https://fonts.gstatic.com', 'https://fonts.googleapis.com'];
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            connectSrc: ["'self'", ...apiDomains, ...trustedDomains, "data:", "blob:"],
-            imgSrc: ["'self'", "data:", "blob:", ...trustedDomains],
+            connectSrc: ["'self'", ...apiDomains, ...trustedDomains, ...cdnDomains, "data:", "blob:"],
+            imgSrc: ["'self'", "data:", "blob:", ...trustedDomains, ...cdnDomains],
             scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // React Vite + Three.js precisam eval
             styleSrc: ["'self'", "'unsafe-inline'"], // Tailwind CSS inline
             workerSrc: ["'self'", "blob:"], // Globe.gl Web Workers
-            fontSrc: ["'self'", "https://fonts.gstatic.com", "https://fonts.googleapis.com"],
+            fontSrc: ["'self'", ...cdnDomains],
         },
     },
     crossOriginEmbedderPolicy: false
