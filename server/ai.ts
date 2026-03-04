@@ -270,6 +270,9 @@ export async function updateIntelligenceDatabase(): Promise<{ success: boolean, 
             // CORE: Merge incremental na Fonte Única de Verdade
             mergeIntoMasterTable(data, provider);
 
+            // Rotação automática: limpa snapshots com mais de 30 dias para evitar crescimento ilimitado do banco
+            db.prepare("DELETE FROM intelligence_snapshot WHERE timestamp < datetime('now', '-30 days')").run();
+
             // Update sync status
             db.prepare('INSERT OR REPLACE INTO sync_status (id, last_sync, status, message) VALUES (1, ?, ?, ?)')
                 .run(new Date().toISOString(), 'active', `Sincronizado via ${provider}`);

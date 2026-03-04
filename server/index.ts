@@ -17,35 +17,42 @@ const PORT = process.env.PORT || 3001;
 
 // ====== TECH86: APPSEC & PERFORMANCE ======
 
-// 1. Blindagem de Cabeçalhos HTTP (Calibrada para WebGL / React VITE)
+// 1. Blindagem de Cabeçalhos HTTP (CSP restrita a domínios explícitos)
+const trustedDomains = ['https://pandemic-monitor.tech86.com.br', 'https://tech86.com.br'];
+const apiDomains = ['https://integrate.api.nvidia.com', 'https://generativelanguage.googleapis.com', 'https://disease.sh'];
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
-            defaultSrc: ["'self'", "*"],
-            connectSrc: ["'self'", "*", "data:", "blob:"], // Libera requests API e WebSockets
-            imgSrc: ["'self'", "data:", "blob:", "*"], // Libera texturas do ThreeJS e imagens externas
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "*"], // Essencial para React Vite, PM2 e Three.js
-            styleSrc: ["'self'", "'unsafe-inline'", "*"], // Essencial para estilos inline dinâmicos e Tailwind
-            workerSrc: ["'self'", "blob:", "*"], // Essencial para Globe.gl
+            defaultSrc: ["'self'"],
+            connectSrc: ["'self'", ...apiDomains, ...trustedDomains, "data:", "blob:"],
+            imgSrc: ["'self'", "data:", "blob:", ...trustedDomains],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // React Vite + Three.js precisam eval
+            styleSrc: ["'self'", "'unsafe-inline'"], // Tailwind CSS inline
+            workerSrc: ["'self'", "blob:"], // Globe.gl Web Workers
+            fontSrc: ["'self'", "https://fonts.gstatic.com", "https://fonts.googleapis.com"],
         },
     },
     crossOriginEmbedderPolicy: false
 }));
 
-// 2. Compressão GZIP/Brotli (Redução em massiva nos JSONS gigantescos e WebGL)
+// 2. Compressão GZIP/Brotli
 app.use(compression());
 
-// 3. Rate Limiter (Proteção DDoS / Protege Chaves da IA na GPU Vultr contra esgotamento abusivo de tráfego)
+// 3. Rate Limiter (Proteção DDoS contra esgotamento de créditos IA)
 const globalApiLimiter = rateLimit({
-    windowMs: 5 * 60 * 1000, // 5 minutos
-    max: 100, // Limite de 100 requisições por IP na janela
+    windowMs: 5 * 60 * 1000,
+    max: 100,
     message: { error: 'Limite de acessos superado. Aguarde antes de realizar novas consultas de telemetria.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
 
-// 4. CORS estrito para domínios de produção da aplicação
-app.use(cors());
+// 4. CORS restrito aos domínios da Tech86
+const isProduction = process.env.NODE_ENV === 'production';
+app.use(cors(isProduction ? {
+    origin: ['https://pandemic-monitor.tech86.com.br', 'https://tech86.com.br'],
+    methods: ['GET'],
+} : {}));
 
 app.use(express.json());
 app.use('/api/', globalApiLimiter);
@@ -67,8 +74,9 @@ if (!row) {
 app.get('/api/admin/force-sync', async (req, res) => {
     const { token } = req.query;
 
-    // Proteção rigorosa para evitar ataques de esgotamento de créditos da IA
-    if (token !== 'Tech86Admin') {
+    // Proteção via variável de ambiente (nunca expor tokens no código-fonte)
+    const adminToken = process.env.ADMIN_TOKEN || 'Tech86Admin_CHANGE_ME';
+    if (!token || token !== adminToken) {
         return res.status(401).json({ error: 'Acesso negado. Token de administração inválido.' });
     }
 
@@ -76,7 +84,7 @@ app.get('/api/admin/force-sync', async (req, res) => {
     try {
         const result = await updateIntelligenceDatabase();
         if (result.success) {
-            res.json({ message: '✨ Sincronização de Elite concluída com sucesso. O Data Lake foi atualizado com noovas anomalias e notícias.' });
+            res.json({ message: '✨ Sincronização concluída com sucesso. O Data Lake foi atualizado com novas anomalias e notícias.' });
         } else {
             res.status(500).json({
                 error: 'Os motores de IA reportaram falha na requisição. Verifique os logs do servidor.',

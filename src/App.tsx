@@ -136,6 +136,7 @@ export default function App() {
         lastUpdated={lastUpdated}
         theme={theme}
         onThemeChange={setTheme}
+        onRefreshData={() => fetchIntelligence(timeRange)}
       />
       <main className="flex-1 flex relative overflow-hidden">
         <NavigationSidebar

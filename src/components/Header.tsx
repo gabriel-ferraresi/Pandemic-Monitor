@@ -6,12 +6,14 @@ export function Header({
   loading,
   lastUpdated,
   theme,
-  onThemeChange
+  onThemeChange,
+  onRefreshData
 }: {
   loading: boolean,
   lastUpdated: Date,
   theme: 'light' | 'dark',
-  onThemeChange: (theme: 'light' | 'dark') => void
+  onThemeChange: (theme: 'light' | 'dark') => void,
+  onRefreshData: () => void
 }) {
   const [time, setTime] = useState(new Date());
 
@@ -37,12 +39,15 @@ export function Header({
       const diff = nextUpdate.getTime() - now.getTime();
 
       if (diff <= 0) {
-        if (diff > -60000) { // Dentro de 60s do update
+        if (diff > -5000) {
           setIsUpdatingState(true);
           setStatusText("ATUALIZANDO DADOS");
           setTimeStr("AGUARDE...");
-        } else {
-          window.location.reload();
+          onRefreshData();
+          // Recalcular próximo update (+15min a partir de agora)
+          const next = new Date();
+          next.setMinutes(next.getMinutes() + 15, 0, 0);
+          setNextUpdate(next);
         }
       } else {
         const m = Math.floor(diff / 60000);

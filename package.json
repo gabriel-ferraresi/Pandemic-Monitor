@@ -1,5 +1,5 @@
 {
-  "name": "react-example",
+  "name": "pandemic-monitor",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -38,8 +38,7 @@
     "tailwind-merge": "^3.5.0",
     "three": "^0.183.2",
     "tsx": "^4.21.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "typescript": "~5.8.2"
   },
   "devDependencies": {
     "@types/compression": "^1.8.1",
