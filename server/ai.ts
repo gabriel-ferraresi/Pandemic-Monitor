@@ -162,11 +162,13 @@ function mergeIntoMasterTable(newData: any, provider: string) {
     const allNews = new Map<string, any>();
     const allTicker = new Set<string>();
 
-    // Carregar dados existentes primeiro (dados antigos — preservando firstSeen)
+    // Carregar dados existentes primeiro (dados antigos)
+    // Backfill: itens sem firstSeen recebem timestamp atual para garantir filtragem temporal funcional
+    const now = new Date().toISOString();
     if (existing) {
-        if (Array.isArray(existing.outbreaks)) existing.outbreaks.forEach((o: any) => allOutbreaks.set(normalizeKey(o.disease) + '|' + normalizeKey(o.country), o));
-        if (Array.isArray(existing.anomalies)) existing.anomalies.forEach((a: any) => allAnomalies.set(normalizeKey(a.description).substring(0, 80), a));
-        if (Array.isArray(existing.predictions)) existing.predictions.forEach((p: any) => allPredictions.set(normalizeKey(p.disease) + '|' + normalizeKey(p.region), p));
+        if (Array.isArray(existing.outbreaks)) existing.outbreaks.forEach((o: any) => allOutbreaks.set(normalizeKey(o.disease) + '|' + normalizeKey(o.country), { ...o, firstSeen: o.firstSeen || now }));
+        if (Array.isArray(existing.anomalies)) existing.anomalies.forEach((a: any) => allAnomalies.set(normalizeKey(a.description).substring(0, 80), { ...a, firstSeen: a.firstSeen || now }));
+        if (Array.isArray(existing.predictions)) existing.predictions.forEach((p: any) => allPredictions.set(normalizeKey(p.disease) + '|' + normalizeKey(p.region), { ...p, firstSeen: p.firstSeen || now }));
         if (Array.isArray(existing.aiArticles)) existing.aiArticles.forEach((art: any) => allArticles.set(normalizeKey(art.title), art));
         if (Array.isArray(existing.externalNews)) existing.externalNews.forEach((n: any) => allNews.set(normalizeKey(n.title), n));
         if (Array.isArray(existing.tickerNews)) existing.tickerNews.forEach((t: string) => allTicker.add(t));
@@ -174,7 +176,6 @@ function mergeIntoMasterTable(newData: any, provider: string) {
 
     // Sobrescrever com dados novos (dados mais recentes vencem)
     // Itens novos recebem firstSeen = agora; itens existentes preservam o firstSeen original
-    const now = new Date().toISOString();
     if (Array.isArray(newData.outbreaks)) newData.outbreaks.forEach((o: any) => {
         const key = normalizeKey(o.disease) + '|' + normalizeKey(o.country);
         const existingItem = allOutbreaks.get(key);

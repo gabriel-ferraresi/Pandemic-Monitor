@@ -129,15 +129,16 @@ app.get('/api/health-data', (req, res) => {
             const rangeMs: Record<string, number> = {
                 '24h': 24 * 60 * 60 * 1000,
                 '7d': 7 * 24 * 60 * 60 * 1000,
+                '30d': 30 * 24 * 60 * 60 * 1000,
             };
 
             const cutoff = rangeMs[range];
 
             if (cutoff) {
-                // Filtra por firstSeen — itens sem firstSeen são tratados como "antigos" (excluídos do filtro temporal)
+                // Filtra por firstSeen — itens sem firstSeen são incluídos (backfill pendente)
                 const filterByTime = (items: any[]) =>
                     (items || []).filter((item: any) => {
-                        if (!item.firstSeen) return false;
+                        if (!item.firstSeen) return true; // Sem firstSeen = incluir (dado legado)
                         return (now - new Date(item.firstSeen).getTime()) <= cutoff;
                     });
 
@@ -149,8 +150,15 @@ app.get('/api/health-data', (req, res) => {
                 const uniqueDiseases = new Set(
                     (data.outbreaks || []).map((o: any) => (o.disease || '').toLowerCase().trim())
                 );
+
+                // Recalcular globalThreatLevel baseado nos dados filtrados
+                const hasCritical = (data.outbreaks || []).some((o: any) => o.severity === 'CRITICAL');
+                const hasHigh = (data.outbreaks || []).some((o: any) => o.severity === 'HIGH');
+                const filteredThreatLevel = hasCritical ? 'CRÍTICO' : hasHigh ? 'ALTO' : uniqueDiseases.size > 0 ? 'MODERADO' : 'BAIXO';
+
                 data.stats = {
                     ...data.stats,
+                    globalThreatLevel: filteredThreatLevel,
                     monitoredPathogens: uniqueDiseases.size,
                     activeAnomalies: (data.anomalies || []).length,
                     predictionsCount: (data.predictions || []).length,
