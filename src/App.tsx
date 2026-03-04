@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { Header } from "./components/Header";
-import { Sidebar } from "./components/Sidebar";
+import { Sidebar, GlobeFilter } from "./components/Sidebar";
 import { NavigationSidebar } from "./components/NavigationSidebar";
 import { GlobeComponent } from "./components/GlobeComponent";
 import { BottomTicker, TickerItem } from "./components/BottomTicker";
@@ -30,6 +30,7 @@ export default function App() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [timeRange, setTimeRange] = useState('live');
   const [targetNewsId, setTargetNewsId] = useState<string | null>(null);
+  const [globeFilter, setGlobeFilter] = useState<GlobeFilter>('all');
 
   // Settings State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -74,6 +75,10 @@ export default function App() {
   };
 
   useEffect(() => {
+    // Limpar seleção ao trocar range
+    setSelectedEvent(null);
+    setSelectedLocation(null);
+
     const stored = getStoredIntelligence();
     if (stored && timeRange === 'live') { // Only use cache for live view
       setHealthData(stored);
@@ -81,6 +86,7 @@ export default function App() {
       setLoading(false);
       fetchIntelligence(timeRange); // Fetch in background
     } else {
+      // Para filtros temporais, sempre buscar dados frescos do backend
       fetchIntelligence(timeRange);
     }
     // Hard reload is handled internally by Header.tsx 15-minute countdown
@@ -144,7 +150,7 @@ export default function App() {
           onViewChange={setActiveView}
           onOpenSettings={() => setIsSettingsOpen(true)}
         />
-        <GlobeComponent data={healthData} focusLocation={selectedLocation} onEventClick={(point) => handleEventSelect(point, 'globe')} />
+        <GlobeComponent data={healthData} focusLocation={selectedLocation} onEventClick={(point) => handleEventSelect(point, 'globe')} globeFilter={globeFilter} />
 
         {/* Selected Event Floating Panel */}
         <SelectedEventPanel event={selectedEvent} onClose={() => {
@@ -155,7 +161,7 @@ export default function App() {
         <div className="flex-1" />
 
         {/* Dynamic View Rendering */}
-        {activeView === 'global' && <Sidebar data={healthData} onAlertClick={(item, type) => handleEventSelect(item, type)} />}
+        {activeView === 'global' && <Sidebar data={healthData} onAlertClick={(item, type) => handleEventSelect(item, type)} activeGlobeFilter={globeFilter} onGlobeFilterChange={setGlobeFilter} />}
         {activeView === 'local' && <LocalView data={healthData} userLocation={userLocation} onAlertClick={(item, type) => handleEventSelect(item, type)} />}
         {activeView === 'outbreaks' && <OutbreaksView data={healthData} onAlertClick={(item) => handleEventSelect(item, 'outbreak')} />}
         {activeView === 'threats' && <ThreatsView data={healthData} onAlertClick={(item) => handleEventSelect(item, 'anomaly')} />}

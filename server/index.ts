@@ -102,6 +102,8 @@ app.get('/api/admin/force-sync', async (req, res) => {
 // API Routes
 app.get('/api/health-data', (req, res) => {
     try {
+        const range = (req.query.range as string) || 'live';
+
         // Fonte Única de Verdade: Leitura O(1) da tabela merged_intelligence
         const mergedRow = db.prepare('SELECT data_json, updated_at FROM merged_intelligence WHERE id = 1').get() as any;
         const syncStatus = db.prepare('SELECT * FROM sync_status WHERE id = 1').get() as any;
@@ -110,11 +112,58 @@ app.get('/api/health-data', (req, res) => {
         if (mergedRow) {
             const data = JSON.parse(mergedRow.data_json);
 
+            // Extrair contagens de arquivados antes de removê-los da resposta
+            const archivedCounts = {
+                outbreaks: (data.archivedOutbreaks || []).length,
+                anomalies: (data.archivedAnomalies || []).length,
+                predictions: (data.archivedPredictions || []).length,
+            };
+
+            // Remover arrays arquivados da resposta padrão (mantém payload leve)
+            delete data.archivedOutbreaks;
+            delete data.archivedAnomalies;
+            delete data.archivedPredictions;
+
+            // Filtragem temporal baseada em firstSeen
+            const now = Date.now();
+            const rangeMs: Record<string, number> = {
+                '24h': 24 * 60 * 60 * 1000,
+                '7d': 7 * 24 * 60 * 60 * 1000,
+            };
+
+            const cutoff = rangeMs[range];
+
+            if (cutoff) {
+                // Filtra por firstSeen — itens sem firstSeen são tratados como "antigos" (excluídos do filtro temporal)
+                const filterByTime = (items: any[]) =>
+                    (items || []).filter((item: any) => {
+                        if (!item.firstSeen) return false;
+                        return (now - new Date(item.firstSeen).getTime()) <= cutoff;
+                    });
+
+                data.outbreaks = filterByTime(data.outbreaks);
+                data.anomalies = filterByTime(data.anomalies);
+                data.predictions = filterByTime(data.predictions);
+
+                // Recalcular stats com dados filtrados
+                const uniqueDiseases = new Set(
+                    (data.outbreaks || []).map((o: any) => (o.disease || '').toLowerCase().trim())
+                );
+                data.stats = {
+                    ...data.stats,
+                    monitoredPathogens: uniqueDiseases.size,
+                    activeAnomalies: (data.anomalies || []).length,
+                    predictionsCount: (data.predictions || []).length,
+                };
+            }
+
             res.json({
                 ...data,
                 historyLength: snapshotCount,
+                archivedCounts,
                 lastSync: syncStatus ? syncStatus.last_sync : mergedRow.updated_at,
                 status: syncStatus ? syncStatus.status : 'active',
+                activeRange: range,
             });
         } else {
             res.status(503).json({ error: 'Nenhum snapshot de IA disponível ainda. Aguardando sincronização.' });

@@ -162,7 +162,7 @@ function mergeIntoMasterTable(newData: any, provider: string) {
     const allNews = new Map<string, any>();
     const allTicker = new Set<string>();
 
-    // Carregar dados existentes primeiro (dados antigos)
+    // Carregar dados existentes primeiro (dados antigos — preservando firstSeen)
     if (existing) {
         if (Array.isArray(existing.outbreaks)) existing.outbreaks.forEach((o: any) => allOutbreaks.set(normalizeKey(o.disease) + '|' + normalizeKey(o.country), o));
         if (Array.isArray(existing.anomalies)) existing.anomalies.forEach((a: any) => allAnomalies.set(normalizeKey(a.description).substring(0, 80), a));
@@ -173,37 +173,73 @@ function mergeIntoMasterTable(newData: any, provider: string) {
     }
 
     // Sobrescrever com dados novos (dados mais recentes vencem)
-    if (Array.isArray(newData.outbreaks)) newData.outbreaks.forEach((o: any) => allOutbreaks.set(normalizeKey(o.disease) + '|' + normalizeKey(o.country), o));
-    if (Array.isArray(newData.anomalies)) newData.anomalies.forEach((a: any) => allAnomalies.set(normalizeKey(a.description).substring(0, 80), a));
-    if (Array.isArray(newData.predictions)) newData.predictions.forEach((p: any) => allPredictions.set(normalizeKey(p.disease) + '|' + normalizeKey(p.region), p));
+    // Itens novos recebem firstSeen = agora; itens existentes preservam o firstSeen original
+    const now = new Date().toISOString();
+    if (Array.isArray(newData.outbreaks)) newData.outbreaks.forEach((o: any) => {
+        const key = normalizeKey(o.disease) + '|' + normalizeKey(o.country);
+        const existingItem = allOutbreaks.get(key);
+        allOutbreaks.set(key, { ...o, firstSeen: existingItem?.firstSeen || o.firstSeen || now });
+    });
+    if (Array.isArray(newData.anomalies)) newData.anomalies.forEach((a: any) => {
+        const key = normalizeKey(a.description).substring(0, 80);
+        const existingItem = allAnomalies.get(key);
+        allAnomalies.set(key, { ...a, firstSeen: existingItem?.firstSeen || a.firstSeen || now });
+    });
+    if (Array.isArray(newData.predictions)) newData.predictions.forEach((p: any) => {
+        const key = normalizeKey(p.disease) + '|' + normalizeKey(p.region);
+        const existingItem = allPredictions.get(key);
+        allPredictions.set(key, { ...p, firstSeen: existingItem?.firstSeen || p.firstSeen || now });
+    });
     if (Array.isArray(newData.aiArticles)) newData.aiArticles.forEach((art: any) => allArticles.set(normalizeKey(art.title), art));
     if (Array.isArray(newData.externalNews)) newData.externalNews.forEach((n: any) => allNews.set(normalizeKey(n.title), n));
     if (Array.isArray(newData.tickerNews)) newData.tickerNews.forEach((t: string) => allTicker.add(t));
 
-    // 3. Montar o objeto final determinístico
-    const outbreaks = Array.from(allOutbreaks.values());
-    const anomalies = Array.from(allAnomalies.values());
-    const predictions = Array.from(allPredictions.values());
+    // 3. Separar dados ativos vs arquivados (TTL de 7 dias)
+    const ARCHIVE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+    const nowMs = Date.now();
+
+    const partitionByTTL = (items: any[]) => {
+        const active: any[] = [];
+        const archived: any[] = [];
+        for (const item of items) {
+            if (item.firstSeen && (nowMs - new Date(item.firstSeen).getTime()) > ARCHIVE_TTL_MS) {
+                archived.push({ ...item, archived: true });
+            } else {
+                active.push(item);
+            }
+        }
+        return { active, archived };
+    };
+
+    const allOutbreaksList = Array.from(allOutbreaks.values());
+    const allAnomaliesList = Array.from(allAnomalies.values());
+    const allPredictionsList = Array.from(allPredictions.values());
     const aiArticles = Array.from(allArticles.values());
     const externalNews = Array.from(allNews.values());
     const tickerNews = Array.from(allTicker.values());
 
-    // 4. Calcular stats DETERMINÍSTICAS (sem número mágico!)
-    // monitoredPathogens = quantidade de DOENÇAS ÚNICAS em todos os surtos
-    const uniqueDiseases = new Set(outbreaks.map((o: any) => normalizeKey(o.disease)));
+    const ob = partitionByTTL(allOutbreaksList);
+    const an = partitionByTTL(allAnomaliesList);
+    const pr = partitionByTTL(allPredictionsList);
+
+    // 4. Calcular stats DETERMINÍSTICAS apenas sobre dados ATIVOS
+    const uniqueDiseases = new Set(ob.active.map((o: any) => normalizeKey(o.disease)));
 
     const merged = {
-        outbreaks,
-        anomalies,
-        predictions,
+        outbreaks: ob.active,
+        anomalies: an.active,
+        predictions: pr.active,
+        archivedOutbreaks: ob.archived,
+        archivedAnomalies: an.archived,
+        archivedPredictions: pr.archived,
         aiArticles,
         externalNews,
         tickerNews,
         stats: {
             globalThreatLevel: newData.stats?.globalThreatLevel || existing?.stats?.globalThreatLevel || 'MODERADO',
             monitoredPathogens: uniqueDiseases.size,
-            activeAnomalies: anomalies.length,
-            predictionsCount: predictions.length,
+            activeAnomalies: an.active.length,
+            predictionsCount: pr.active.length,
         },
         provider,
         lastMerge: new Date().toISOString(),
@@ -214,7 +250,7 @@ function mergeIntoMasterTable(newData: any, provider: string) {
     db.prepare('INSERT OR REPLACE INTO merged_intelligence (id, data_json, updated_at) VALUES (1, ?, ?)')
         .run(mergedJson, new Date().toISOString());
 
-    console.log(`[Tech86 Merge] Fonte Única atualizada: ${outbreaks.length} surtos, ${anomalies.length} anomalias, ${predictions.length} previsões, ${uniqueDiseases.size} doenças únicas.`);
+    console.log(`[Tech86 Merge] Fonte Única atualizada: ${ob.active.length} surtos ativos (${ob.archived.length} arquivados), ${an.active.length} anomalias ativas (${an.archived.length} arquivadas), ${pr.active.length} previsões ativas, ${uniqueDiseases.size} doenças únicas.`);
 }
 
 export async function updateIntelligenceDatabase(): Promise<{ success: boolean, reason?: string, rawText?: string }> {

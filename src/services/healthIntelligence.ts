@@ -1,4 +1,3 @@
-// Tipos exportados para leitura dos JSONs retornados pela nossa API Local
 export interface Outbreak {
   id: string;
   disease: string;
@@ -9,6 +8,7 @@ export interface Outbreak {
   casesEstimate: string;
   trend: 'up' | 'down' | 'stable';
   summary: string;
+  firstSeen?: string;
 }
 
 export interface Anomaly {
@@ -18,6 +18,7 @@ export interface Anomaly {
   lat: number;
   lng: number;
   confidence: number;
+  firstSeen?: string;
 }
 
 export interface Prediction {
@@ -26,6 +27,7 @@ export interface Prediction {
   region: string;
   forecast: string;
   riskLevel: 'CRITICAL' | 'HIGH' | 'MODERATE';
+  firstSeen?: string;
 }
 
 export interface AIArticle {
@@ -60,7 +62,12 @@ export interface GlobalIntelligence {
   tickerNews: string[];
   aiArticles: AIArticle[];
   externalNews: ExternalNews[];
-  historyLength?: number;  // Nova métrica temporal vinda da API
+  archivedCounts?: {
+    outbreaks: number;
+    anomalies: number;
+    predictions: number;
+  };
+  historyLength?: number;
   lastSync?: string;
   provider?: string;
 }
