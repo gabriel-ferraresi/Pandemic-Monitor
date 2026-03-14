@@ -42,7 +42,7 @@ export function Sidebar({ data, onAlertClick, activeGlobeFilter = 'all', onGlobe
     <div className={cn(
       "flex flex-col gap-5 overflow-y-auto custom-scrollbar transition-colors duration-500",
       isMobile
-        ? "w-full p-4 bg-transparent"
+        ? "w-full p-4 bg-transparent overflow-x-hidden"
         : "w-[400px] h-full gap-6 p-6 bg-white/60 dark:bg-black/60 backdrop-blur-xl border-l border-slate-200 dark:border-white/10 z-10 relative shadow-[4px_0_24px_rgba(0,0,0,0.05)] dark:shadow-[-4px_0_24px_rgba(0,0,0,0.5)]"
     )}>
 
@@ -51,7 +51,7 @@ export function Sidebar({ data, onAlertClick, activeGlobeFilter = 'all', onGlobe
 
         {/* Nível de Ameaça Global */}
         <div className={cn(
-          "p-3 md:p-4 rounded-xl border transition-all cursor-default group relative overflow-hidden",
+          "p-3 md:p-4 rounded-xl border transition-all cursor-default group relative overflow-hidden min-w-0",
           threatStyle.bg, threatStyle.border, threatStyle.glow
         )}>
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 dark:via-white/5 to-transparent -translate-x-full group-hover:animate-shimmer" />
@@ -77,7 +77,7 @@ export function Sidebar({ data, onAlertClick, activeGlobeFilter = 'all', onGlobe
         <div
           onClick={() => handleFilterClick('outbreaks')}
           className={cn(
-            "p-3 md:p-4 rounded-xl bg-gradient-to-br from-slate-50 to-white dark:from-white/5 dark:to-transparent border transition-all cursor-pointer group relative overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.15)]",
+            "p-3 md:p-4 rounded-xl bg-gradient-to-br from-slate-50 to-white dark:from-white/5 dark:to-transparent border transition-all cursor-pointer group relative overflow-hidden min-w-0 shadow-[0_0_15px_rgba(59,130,246,0.15)]",
             activeGlobeFilter === 'outbreaks'
               ? "border-blue-400 dark:border-blue-500/60 ring-1 ring-blue-400/30"
               : "border-slate-200 dark:border-white/10 hover:border-blue-300 dark:hover:border-blue-500/30"
@@ -98,7 +98,7 @@ export function Sidebar({ data, onAlertClick, activeGlobeFilter = 'all', onGlobe
         <div
           onClick={() => handleFilterClick('anomalies')}
           className={cn(
-            "p-3 md:p-4 rounded-xl bg-gradient-to-br from-slate-50 to-white dark:from-white/5 dark:to-transparent border transition-all cursor-pointer group relative overflow-hidden shadow-[0_0_15px_rgba(249,115,22,0.15)]",
+            "p-3 md:p-4 rounded-xl bg-gradient-to-br from-slate-50 to-white dark:from-white/5 dark:to-transparent border transition-all cursor-pointer group relative overflow-hidden min-w-0 shadow-[0_0_15px_rgba(249,115,22,0.15)]",
             activeGlobeFilter === 'anomalies'
               ? "border-orange-400 dark:border-orange-500/60 ring-1 ring-orange-400/30"
               : "border-slate-200 dark:border-white/10 hover:border-orange-300 dark:hover:border-orange-500/30"
@@ -116,7 +116,7 @@ export function Sidebar({ data, onAlertClick, activeGlobeFilter = 'all', onGlobe
         </div>
 
         {/* Previsões Geradas */}
-        <div className="p-3 md:p-4 rounded-xl bg-gradient-to-br from-slate-50 to-white dark:from-white/5 dark:to-transparent border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-default group relative overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+        <div className="p-3 md:p-4 rounded-xl bg-gradient-to-br from-slate-50 to-white dark:from-white/5 dark:to-transparent border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-default group relative overflow-hidden min-w-0 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 dark:via-white/5 to-transparent -translate-x-full group-hover:animate-shimmer" />
           <div className="flex items-center justify-between mb-2 md:mb-3 relative z-10">
             <BrainCircuit className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />

@@ -13,7 +13,7 @@ export function OutbreaksView({ data, onAlertClick, isMobile = false }: { data: 
         <p className="text-sm text-slate-500 dark:text-zinc-400 mt-2 transition-colors">Monitoramento detalhado de surtos ativos e suas tendências.</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 custom-scrollbar">
         <div className="grid gap-4">
           {data.outbreaks.map((outbreak, index) => (
             <div

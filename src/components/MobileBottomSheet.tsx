@@ -95,7 +95,7 @@ export function MobileBottomSheet({ children, peekContent, forcePeek, onStateCha
     <div
       ref={sheetRef}
       className={cn(
-        "fixed left-0 right-0 z-40 bg-white/90 dark:bg-black/85 backdrop-blur-2xl border-t border-slate-200 dark:border-white/10 rounded-t-2xl shadow-[0_-4px_30px_rgba(0,0,0,0.15)] dark:shadow-[0_-4px_30px_rgba(0,0,0,0.6)] overflow-hidden",
+        "fixed left-0 right-0 z-40 bg-white/90 dark:bg-black/85 backdrop-blur-2xl border-t border-slate-200 dark:border-white/10 rounded-t-2xl shadow-[0_-4px_30px_rgba(0,0,0,0.15)] dark:shadow-[0_-4px_30px_rgba(0,0,0,0.6)] overflow-x-hidden overflow-y-hidden",
         !isDragging && "transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
       )}
       style={{
@@ -123,7 +123,7 @@ export function MobileBottomSheet({ children, peekContent, forcePeek, onStateCha
 
       {/* Full content — quando expandido */}
       {sheetState !== 'peek' && (
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-1" style={{ height: 'calc(100% - 32px)' }}>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-1 max-w-full" style={{ height: 'calc(100% - 32px)' }}>
           {children}
         </div>
       )}

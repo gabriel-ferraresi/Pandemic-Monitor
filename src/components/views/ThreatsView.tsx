@@ -13,7 +13,7 @@ export function ThreatsView({ data, onAlertClick, isMobile = false }: { data: Gl
         <p className="text-sm text-slate-500 dark:text-zinc-400 mt-2 transition-colors">Análise preditiva e detecção de anomalias pela IA.</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 custom-scrollbar flex flex-col gap-8">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 custom-scrollbar flex flex-col gap-8">
 
         {/* Anomalies Section */}
         <div>

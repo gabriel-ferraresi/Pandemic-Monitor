@@ -176,9 +176,9 @@ export default function App() {
   // ─────────── MOBILE LAYOUT ───────────
   if (isMobile) {
     return (
-      <div className="flex flex-col h-[100dvh] w-screen transition-colors duration-500 bg-slate-50 dark:bg-[#050505] overflow-hidden font-sans text-slate-700 dark:text-zinc-400 selection:bg-emerald-500/30 selection:text-white">
-        {/* Background radial glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] opacity-10 dark:opacity-20 pointer-events-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-500 dark:from-blue-900 via-transparent to-transparent z-0" />
+      <div className="flex flex-col h-[100dvh] w-full max-w-[100vw] transition-colors duration-500 bg-slate-50 dark:bg-[#050505] overflow-hidden font-sans text-slate-700 dark:text-zinc-400 selection:bg-emerald-500/30 selection:text-white">
+        {/* Background radial glow — constrained to viewport on mobile */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[600px] h-[300px] opacity-10 dark:opacity-20 pointer-events-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-500 dark:from-blue-900 via-transparent to-transparent z-0" />
 
         {/* Mobile Header — condensado */}
         <Header
