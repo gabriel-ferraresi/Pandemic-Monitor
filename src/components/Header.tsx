@@ -7,13 +7,15 @@ export function Header({
   lastUpdated,
   theme,
   onThemeChange,
-  onRefreshData
+  onRefreshData,
+  isMobile = false
 }: {
   loading: boolean,
   lastUpdated: Date,
   theme: 'light' | 'dark',
   onThemeChange: (theme: 'light' | 'dark') => void,
-  onRefreshData: () => void
+  onRefreshData: () => void,
+  isMobile?: boolean
 }) {
   const [time, setTime] = useState(new Date());
 
@@ -60,6 +62,55 @@ export function Header({
     return () => clearInterval(timer);
   }, [nextUpdate]);
 
+  // ─── MOBILE HEADER ───
+  if (isMobile) {
+    return (
+      <header className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-white/10 bg-white/60 dark:bg-black/60 backdrop-blur-xl z-20 relative shadow-[0_4px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.5)] transition-colors duration-500">
+        <div className="flex items-center gap-3">
+          <div className="p-1.5 bg-gradient-to-br from-red-500/20 to-red-900/20 rounded-lg border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.2)]">
+            <Activity className="w-4 h-4 text-red-500" />
+          </div>
+          <div>
+            <h1 className="text-sm font-bold tracking-tight text-slate-800 dark:text-white flex items-center gap-1">
+              PANDEMIC<span className="text-red-500">MONITOR</span>
+            </h1>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Status indicator */}
+          <div className="flex items-center gap-1.5 text-[10px] font-mono bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-lg border border-slate-200 dark:border-white/5 transition-colors">
+            {loading ? (
+              <>
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-orange-500"></span>
+                </span>
+                <span className="text-orange-500">SYNC</span>
+              </>
+            ) : (
+              <>
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                </span>
+                <span className="text-emerald-500">ON</span>
+              </>
+            )}
+          </div>
+
+          <button
+            onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
+            className="p-1.5 hover:text-slate-800 dark:hover:text-white transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4 text-slate-600" />}
+          </button>
+        </div>
+      </header>
+    );
+  }
+
+  // ─── DESKTOP HEADER ───
   return (
     <header className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10 bg-white/60 dark:bg-black/60 backdrop-blur-xl z-20 relative shadow-[0_4px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.5)] transition-colors duration-500">
       <div className="flex items-center gap-4">

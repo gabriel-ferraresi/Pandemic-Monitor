@@ -19,15 +19,17 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
 export function LocalView({
   data,
   userLocation,
-  onAlertClick
+  onAlertClick,
+  isMobile = false
 }: {
   data: GlobalIntelligence,
   userLocation: { lat: number, lng: number, name?: string } | null,
-  onAlertClick: (item: any, type: 'outbreak' | 'anomaly') => void
+  onAlertClick: (item: any, type: 'outbreak' | 'anomaly') => void,
+  isMobile?: boolean
 }) {
   if (!userLocation) {
     return (
-      <div className="w-[600px] h-full flex flex-col bg-white/90 dark:bg-black/80 backdrop-blur-2xl border-l border-slate-200 dark:border-white/10 z-10 relative shadow-[-4px_0_24px_rgba(0,0,0,0.05)] dark:shadow-[-4px_0_24px_rgba(0,0,0,0.5)] items-center justify-center p-10 text-center transition-colors duration-500">
+      <div className={cn("flex flex-col items-center justify-center p-10 text-center transition-colors duration-500", isMobile ? "w-full" : "w-[600px] h-full bg-white/90 dark:bg-black/80 backdrop-blur-2xl border-l border-slate-200 dark:border-white/10 z-10 relative shadow-[-4px_0_24px_rgba(0,0,0,0.05)] dark:shadow-[-4px_0_24px_rgba(0,0,0,0.5)]")}>
         <MapPin className="w-16 h-16 text-slate-400 dark:text-zinc-600 mb-6 transition-colors" />
         <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-4 transition-colors">Localização Não Definida</h2>
         <p className="text-slate-500 dark:text-zinc-400 mb-8 transition-colors">
@@ -44,7 +46,7 @@ export function LocalView({
   ].sort((a, b) => a.distance - b.distance).slice(0, 10); // Top 10 closest
 
   return (
-    <div className="w-[600px] h-full flex flex-col bg-white/90 dark:bg-black/80 backdrop-blur-2xl border-l border-slate-200 dark:border-white/10 z-10 relative shadow-[-4px_0_24px_rgba(0,0,0,0.05)] dark:shadow-[-4px_0_24px_rgba(0,0,0,0.5)] transition-colors duration-500">
+    <div className={cn("flex flex-col transition-colors duration-500", isMobile ? "w-full p-4" : "w-[600px] h-full bg-white/90 dark:bg-black/80 backdrop-blur-2xl border-l border-slate-200 dark:border-white/10 z-10 relative shadow-[-4px_0_24px_rgba(0,0,0,0.05)] dark:shadow-[-4px_0_24px_rgba(0,0,0,0.5)]")}>
       <div className="p-6 border-b border-slate-200 dark:border-white/10 transition-colors">
         <h2 className="text-lg font-bold text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2 transition-colors">
           <Crosshair className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />

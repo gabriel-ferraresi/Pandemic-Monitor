@@ -2,9 +2,9 @@ import { Activity, AlertTriangle, MapPin, TrendingUp } from "lucide-react";
 import { GlobalIntelligence } from "../../services/healthIntelligence";
 import { cn, translateSeverity } from "../../utils";
 
-export function OutbreaksView({ data, onAlertClick }: { data: GlobalIntelligence, onAlertClick: (item: any) => void }) {
+export function OutbreaksView({ data, onAlertClick, isMobile = false }: { data: GlobalIntelligence, onAlertClick: (item: any) => void, isMobile?: boolean }) {
   return (
-    <div className="w-[600px] h-full flex flex-col bg-white/90 dark:bg-black/80 backdrop-blur-2xl border-l border-slate-200 dark:border-white/10 z-10 relative shadow-[[-4px_0_24px_rgba(0,0,0,0.05)]] dark:shadow-[-4px_0_24px_rgba(0,0,0,0.5)] transition-colors duration-500">
+    <div className={cn("flex flex-col transition-colors duration-500", isMobile ? "w-full p-4" : "w-[600px] h-full bg-white/90 dark:bg-black/80 backdrop-blur-2xl border-l border-slate-200 dark:border-white/10 z-10 relative shadow-[-4px_0_24px_rgba(0,0,0,0.05)] dark:shadow-[-4px_0_24px_rgba(0,0,0,0.5)]")}>
       <div className="p-6 border-b border-slate-200 dark:border-white/10 transition-colors">
         <h2 className="text-lg font-bold text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2 transition-colors">
           <Activity className="w-5 h-5 text-red-600 dark:text-red-500" />
