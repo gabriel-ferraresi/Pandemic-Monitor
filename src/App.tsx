@@ -17,6 +17,8 @@ import { PathogensView } from "./components/views/PathogensView";
 import { SelectedEventPanel } from "./components/views/SelectedEventPanel";
 import { NewsView } from "./components/views/NewsView";
 import { LocalView } from "./components/views/LocalView";
+import { DonateView } from "./components/views/DonateView";
+import { DonateModal } from "./components/donate/DonateModal";
 import { SettingsModal } from "./components/views/SettingsModal";
 import { getStoredIntelligence, updateIntelligenceDB } from "./services/database";
 import { TimelineFilter } from "./components/TimelineFilter";
@@ -40,6 +42,7 @@ export default function App() {
 
   // Settings State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isDonateOpen, setIsDonateOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     return (localStorage.getItem('theme') as 'dark' | 'light') || 'dark';
   });
@@ -166,6 +169,8 @@ export default function App() {
         return <VaccinesView isMobile={isMobile} />;
       case 'pathogens':
         return <PathogensView isMobile={isMobile} />;
+      case 'donate':
+        return <DonateView isMobile={isMobile} />;
       default:
         return null;
     }
@@ -187,6 +192,7 @@ export default function App() {
           theme={theme}
           onThemeChange={setTheme}
           onRefreshData={() => fetchIntelligence(timeRange)}
+          onOpenDonate={() => setIsDonateOpen(true)}
           isMobile={true}
         />
 
@@ -240,6 +246,8 @@ export default function App() {
           userLocation={userLocation}
           onLocationChange={setUserLocation}
         />
+
+        <DonateModal isOpen={isDonateOpen} onClose={() => setIsDonateOpen(false)} isMobile={true} />
       </div>
     );
   }
@@ -256,6 +264,7 @@ export default function App() {
         theme={theme}
         onThemeChange={setTheme}
         onRefreshData={() => fetchIntelligence(timeRange)}
+        onOpenDonate={() => setIsDonateOpen(true)}
       />
       <main className="flex-1 flex relative overflow-hidden">
         <NavigationSidebar
@@ -292,6 +301,8 @@ export default function App() {
         userLocation={userLocation}
         onLocationChange={setUserLocation}
       />
+
+      <DonateModal isOpen={isDonateOpen} onClose={() => setIsDonateOpen(false)} />
     </div>
   );
 }

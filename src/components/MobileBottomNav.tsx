@@ -1,4 +1,4 @@
-import { Globe2, Activity, ShieldAlert, MapPin, Newspaper, Settings } from "lucide-react";
+import { Globe2, Activity, ShieldAlert, MapPin, Newspaper, Settings, Heart } from "lucide-react";
 import { cn } from "../utils";
 
 const NAV_ITEMS = [
@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { id: 'outbreaks', icon: Activity, label: 'Surtos' },
   { id: 'threats', icon: ShieldAlert, label: 'Ameaças' },
   { id: 'news', icon: Newspaper, label: 'Notícias' },
+  { id: 'donate', icon: Heart, label: 'Apoiar' },
 ];
 
 export function MobileBottomNav({ activeView, onViewChange, onOpenSettings }: { activeView: string, onViewChange: (view: string) => void, onOpenSettings: () => void }) {

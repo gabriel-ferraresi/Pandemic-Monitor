@@ -1,4 +1,4 @@
-import { Globe2, Activity, ShieldAlert, Syringe, Database, Newspaper, Settings, MapPin } from "lucide-react";
+import { Globe2, Activity, ShieldAlert, Syringe, Database, Newspaper, Settings, MapPin, Heart } from "lucide-react";
 import { cn } from "../utils";
 
 const NAV_ITEMS = [
@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { id: 'news', icon: Newspaper, label: 'Notícias e Relatórios' },
   { id: 'vaccines', icon: Syringe, label: 'Dados de Vacinação' },
   { id: 'pathogens', icon: Database, label: 'Banco de Patógenos' },
+  { id: 'donate', icon: Heart, label: 'Apoiar Projeto' },
 ];
 
 export function NavigationSidebar({ activeView, onViewChange, onOpenSettings }: { activeView: string, onViewChange: (view: string) => void, onOpenSettings: () => void }) {

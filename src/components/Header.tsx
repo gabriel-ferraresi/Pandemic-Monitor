@@ -8,6 +8,7 @@ export function Header({
   theme,
   onThemeChange,
   onRefreshData,
+  onOpenDonate,
   isMobile = false
 }: {
   loading: boolean,
@@ -15,6 +16,7 @@ export function Header({
   theme: 'light' | 'dark',
   onThemeChange: (theme: 'light' | 'dark') => void,
   onRefreshData: () => void,
+  onOpenDonate?: () => void,
   isMobile?: boolean
 }) {
   const [time, setTime] = useState(new Date());
@@ -78,6 +80,17 @@ export function Header({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Botão Apoiar — mobile */}
+          {onOpenDonate && (
+            <button
+              onClick={onOpenDonate}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-all font-bold text-[10px] uppercase tracking-wider"
+            >
+              <Heart className="w-3 h-3 fill-emerald-500" />
+              Apoiar
+            </button>
+          )}
+
           {/* Status indicator */}
           <div className="flex items-center gap-1.5 text-[10px] font-mono bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-lg border border-slate-200 dark:border-white/5 transition-colors">
             {loading ? (
@@ -190,15 +203,13 @@ export function Header({
             <img src="/tech86/logo_branco.svg" alt="Tech86" className="h-4 object-contain hidden dark:block opacity-80 group-hover:opacity-100 transition-opacity" />
           </a>
 
-          <a
-            href="https://www.asaas.com"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={onOpenDonate}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 hover:scale-105 transition-all font-bold text-[11px] uppercase tracking-wider whitespace-nowrap"
           >
             <Heart className="w-3 h-3 fill-emerald-500" />
             Apoiar Projeto
-          </a>
+          </button>
 
           <button
             onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}

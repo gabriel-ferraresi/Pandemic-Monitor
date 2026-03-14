@@ -1,6 +1,7 @@
 import express from 'express';
 import db from './db.js';
 import { updateIntelligenceDatabase } from './ai.js';
+import donationRouter from './payments/routes.js';
 import cron from 'node-cron';
 import { config } from 'dotenv';
 import cors from 'cors';
@@ -56,6 +57,11 @@ app.use(cors(isProduction ? {
 } : {}));
 
 app.use(express.json());
+
+// Montar rotas de doações (webhook tem seu próprio handler de autenticação)
+app.use('/api/donations', donationRouter);
+
+// Rate limiter global para demais rotas da API
 app.use('/api/', globalApiLimiter);
 
 // Set up 15-minute Cron Job for Tech86 Elite data sync

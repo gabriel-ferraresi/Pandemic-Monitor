@@ -55,6 +55,17 @@ jobs:
             echo "NVIDIA_API_KEY=${{ secrets.NVIDIA_API_KEY }}" >> .env
             echo "ADMIN_TOKEN=${{ secrets.ADMIN_TOKEN }}" >> .env
             
+            # Pagamentos Asaas
+            echo "ASAAS_API_KEY=${{ secrets.ASAAS_API_KEY }}" >> .env
+            echo "ASAAS_ENVIRONMENT=${{ secrets.ASAAS_ENVIRONMENT }}" >> .env
+            echo "ASAAS_WEBHOOK_TOKEN=${{ secrets.ASAAS_WEBHOOK_TOKEN }}" >> .env
+            
+            # Carteiras Crypto
+            echo "CRYPTO_BTC_ADDRESS=${{ secrets.CRYPTO_BTC_ADDRESS }}" >> .env
+            echo "CRYPTO_ETH_ADDRESS=${{ secrets.CRYPTO_ETH_ADDRESS }}" >> .env
+            echo "CRYPTO_SOL_ADDRESS=${{ secrets.CRYPTO_SOL_ADDRESS }}" >> .env
+            echo "CRYPTO_ZEC_ADDRESS=${{ secrets.CRYPTO_ZEC_ADDRESS }}" >> .env
+            
             npm install --omit=dev
             if ! command -v pm2 &> /dev/null; then npm install -g pm2; fi
             pm2 delete global-health-monitor || true
