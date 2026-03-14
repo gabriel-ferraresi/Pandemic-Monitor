@@ -2,9 +2,8 @@ module.exports = {
     apps: [
         {
             name: 'global-health-monitor',
-            script: 'node_modules/tsx/dist/cli.mjs',
-            args: 'server/index.ts',
-            interpreter: 'node',
+            script: 'npm',
+            args: 'start',
             instances: 1, // Single-thread for SQLite and Data Integrity
             exec_mode: 'fork', // Resolves 502 PM2 Crash with 'tsx' and 'npm start'
             autorestart: true,

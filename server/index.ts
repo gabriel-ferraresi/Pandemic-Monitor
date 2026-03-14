@@ -53,7 +53,7 @@ const globalApiLimiter = rateLimit({
 const isProduction = process.env.NODE_ENV === 'production';
 app.use(cors(isProduction ? {
     origin: ['https://pandemic-monitor.tech86.com.br', 'https://tech86.com.br'],
-    methods: ['GET'],
+    methods: ['GET', 'POST'],
 } : {}));
 
 app.use(express.json());
