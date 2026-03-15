@@ -2,11 +2,18 @@ import type { AsaasCustomer, AsaasPayment, AsaasPixQrCode } from './types.js';
 
 // ====== ASAAS API CLIENT — Engenharia de Elite ======
 
-const ASAAS_BASE_URL = process.env.ASAAS_ENVIRONMENT === 'sandbox'
-  ? 'https://sandbox.asaas.com/api/v3'
-  : 'https://api.asaas.com/api/v3';
+// IMPORTANTE: Usar getters (lazy evaluation) porque os imports ESM executam
+// ANTES do dotenv.config() no index.ts. Constantes no nível do módulo
+// seriam avaliadas com process.env vazio.
+function getBaseUrl(): string {
+  return process.env.ASAAS_ENVIRONMENT === 'sandbox'
+    ? 'https://sandbox.asaas.com/api/v3'
+    : 'https://api.asaas.com/api/v3';
+}
 
-const ASAAS_API_KEY = process.env.ASAAS_API_KEY || '';
+function getApiKey(): string {
+  return process.env.ASAAS_API_KEY || '';
+}
 
 const REQUEST_TIMEOUT_MS = 15_000;
 const MAX_RETRIES = 3;
@@ -20,7 +27,7 @@ async function asaasRequest<T>(
   options: RequestInit = {},
   retries = MAX_RETRIES
 ): Promise<T> {
-  const url = `${ASAAS_BASE_URL}${path}`;
+  const url = `${getBaseUrl()}${path}`;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     const controller = new AbortController();
@@ -32,7 +39,7 @@ async function asaasRequest<T>(
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
-          'access_token': ASAAS_API_KEY,
+          'access_token': getApiKey(),
           ...options.headers,
         },
       });

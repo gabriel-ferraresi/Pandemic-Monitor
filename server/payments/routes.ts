@@ -44,12 +44,15 @@ function sanitizeString(str: unknown, maxLength = 100): string | null {
 
 const VALID_CRYPTO: CryptoCurrency[] = ['BTC', 'ETH', 'SOL', 'ZEC'];
 
-const CRYPTO_ADDRESSES: Record<CryptoCurrency, string> = {
-  BTC: process.env.CRYPTO_BTC_ADDRESS || '',
-  ETH: process.env.CRYPTO_ETH_ADDRESS || '',
-  SOL: process.env.CRYPTO_SOL_ADDRESS || '',
-  ZEC: process.env.CRYPTO_ZEC_ADDRESS || '',
-};
+// IMPORTANTE: Getter (lazy) para garantir leitura após dotenv.config()
+function getCryptoAddresses(): Record<CryptoCurrency, string> {
+  return {
+    BTC: process.env.CRYPTO_BTC_ADDRESS || '',
+    ETH: process.env.CRYPTO_ETH_ADDRESS || '',
+    SOL: process.env.CRYPTO_SOL_ADDRESS || '',
+    ZEC: process.env.CRYPTO_ZEC_ADDRESS || '',
+  };
+}
 
 const CRYPTO_EXPLORERS: Record<CryptoCurrency, string> = {
   BTC: 'https://mempool.space/address/',
@@ -192,8 +195,8 @@ router.post('/crypto', async (req, res) => {
     res.json({
       donationId: result.lastInsertRowid,
       currency: body.currency,
-      address: CRYPTO_ADDRESSES[body.currency],
-      explorerUrl: CRYPTO_EXPLORERS[body.currency] + CRYPTO_ADDRESSES[body.currency],
+      address: getCryptoAddresses()[body.currency],
+      explorerUrl: CRYPTO_EXPLORERS[body.currency] + getCryptoAddresses()[body.currency],
     });
   } catch (err: any) {
     console.error('[Donations] Erro ao registrar crypto:', err.message);
@@ -207,8 +210,8 @@ router.post('/crypto', async (req, res) => {
 router.get('/crypto-addresses', (_req, res) => {
   const addresses = VALID_CRYPTO.map(currency => ({
     currency,
-    address: CRYPTO_ADDRESSES[currency],
-    explorerUrl: CRYPTO_EXPLORERS[currency] + CRYPTO_ADDRESSES[currency],
+    address: getCryptoAddresses()[currency],
+    explorerUrl: CRYPTO_EXPLORERS[currency] + getCryptoAddresses()[currency],
   })).filter(a => a.address); // Só retorna se o endereço estiver configurado
 
   res.json({ addresses });
