@@ -6,6 +6,7 @@ export type DonationStatus = 'pending' | 'confirmed' | 'failed' | 'refunded';
 
 export interface CreatePixDonationRequest {
   amount: number; // BRL, min 5.00
+  cpfCnpj: string; // CPF ou CNPJ — obrigatório pelo Asaas (compliance)
   donorName?: string;
   donorMessage?: string;
   isAnonymous?: boolean;

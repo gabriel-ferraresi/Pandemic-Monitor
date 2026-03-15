@@ -22,37 +22,60 @@ interface PixData {
 
 export function PixPayment({ amount, donorName, donorMessage, isAnonymous, onSuccess, onError, isMobile }: PixPaymentProps) {
   const [pixData, setPixData] = useState<PixData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [polling, setPolling] = useState(false);
+  const [cpf, setCpf] = useState('');
+  const [cpfError, setCpfError] = useState('');
+  const [waitingCpf, setWaitingCpf] = useState(true);
 
-  // Gerar cobrança PIX
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const res = await fetch('/api/donations/pix', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount, donorName, donorMessage, isAnonymous }),
-        });
+  // Máscara de CPF: 000.000.000-00
+  const formatCpf = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+  };
 
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || 'Falha ao gerar PIX');
-        }
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCpf(formatCpf(e.target.value));
+    setCpfError('');
+  };
 
-        const data = await res.json();
-        setPixData(data);
-        setPolling(true);
-      } catch (err: any) {
-        onError(err.message || 'Erro ao gerar cobrança PIX');
-      } finally {
-        setLoading(false);
+  // Gerar cobrança PIX após CPF informado
+  const handleGeneratePix = async () => {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    if (cleanCpf.length !== 11) {
+      setCpfError('CPF deve ter 11 dígitos.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setWaitingCpf(false);
+      const res = await fetch('/api/donations/pix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, cpfCnpj: cleanCpf, donorName, donorMessage, isAnonymous }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Falha ao gerar PIX');
       }
-    })();
-  }, [amount]);
+
+      const data = await res.json();
+      setPixData(data);
+      setPolling(true);
+    } catch (err: any) {
+      setWaitingCpf(true);
+      onError(err.message || 'Erro ao gerar cobrança PIX');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Timer de expiração
   useEffect(() => {
@@ -125,6 +148,62 @@ export function PixPayment({ amount, donorName, donorMessage, isAnonymous, onSuc
       <div className="flex flex-col items-center justify-center py-12 gap-4">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
         <p className="text-sm text-slate-500 dark:text-zinc-500 font-mono">Gerando QR Code PIX...</p>
+      </div>
+    );
+  }
+
+  // Etapa 1: Pedir CPF antes de gerar o QR Code
+  if (waitingCpf && !pixData) {
+    return (
+      <div className="flex flex-col items-center gap-5 py-4">
+        <div className="text-center">
+          <div className="text-2xl font-bold text-slate-800 dark:text-white">
+            R$ {amount.toFixed(2)}
+          </div>
+          <p className="text-xs text-slate-500 dark:text-zinc-500 font-mono mt-1">
+            Informe seu CPF para gerar a cobrança PIX
+          </p>
+        </div>
+
+        <div className="w-full max-w-xs space-y-2">
+          <label className="block text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider">
+            CPF do pagador
+          </label>
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="000.000.000-00"
+            value={cpf}
+            onChange={handleCpfChange}
+            className={cn(
+              "w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-white/5 border text-center font-mono text-lg tracking-wider",
+              "placeholder:text-slate-400 dark:placeholder:text-zinc-600",
+              "focus:outline-none focus:ring-2",
+              cpfError
+                ? "border-red-500 focus:ring-red-500/30"
+                : "border-slate-200 dark:border-white/10 focus:ring-emerald-500/30 focus:border-emerald-500"
+            )}
+          />
+          {cpfError && (
+            <p className="text-xs text-red-500 font-mono text-center">{cpfError}</p>
+          )}
+          <p className="text-[10px] text-slate-400 dark:text-zinc-600 text-center">
+            Exigido pelo sistema de pagamentos por compliance financeiro. Não será exibido publicamente.
+          </p>
+        </div>
+
+        <button
+          onClick={handleGeneratePix}
+          disabled={cpf.replace(/\D/g, '').length < 11}
+          className={cn(
+            "w-full max-w-xs py-3 rounded-xl font-bold text-sm transition-all",
+            cpf.replace(/\D/g, '').length >= 11
+              ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/25"
+              : "bg-slate-200 dark:bg-white/5 text-slate-400 dark:text-zinc-600 cursor-not-allowed"
+          )}
+        >
+          Gerar QR Code PIX
+        </button>
       </div>
     );
   }

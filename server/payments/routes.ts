@@ -58,7 +58,7 @@ const CRYPTO_EXPLORERS: Record<CryptoCurrency, string> = {
   BTC: 'https://mempool.space/address/',
   ETH: 'https://etherscan.io/address/',
   SOL: 'https://solscan.io/account/',
-  ZEC: 'https://zcashblockexplorer.com/address/',
+  ZEC: 'https://blockchair.com/zcash/address/',
 };
 
 // ═══════════════════════════════════════════
@@ -72,14 +72,20 @@ router.post('/pix', async (req, res) => {
       return res.status(400).json({ error: 'Valor inválido. Mínimo: R$ 5,00, Máximo: R$ 50.000,00' });
     }
 
+    // CPF/CNPJ é obrigatório pelo Asaas (compliance)
+    const cpfCnpj = typeof body.cpfCnpj === 'string' ? body.cpfCnpj.replace(/\D/g, '') : '';
+    if (!cpfCnpj || (cpfCnpj.length !== 11 && cpfCnpj.length !== 14)) {
+      return res.status(400).json({ error: 'CPF ou CNPJ válido é obrigatório para gerar cobrança PIX.' });
+    }
+
     const donorName = sanitizeString(body.donorName, 60);
     const donorMessage = sanitizeString(body.donorMessage, 200);
     const isAnonymous = body.isAnonymous !== false ? 1 : 0;
 
-    // Criar customer genérico para PIX (sem CPF necessário)
+    // Criar customer no Asaas — CPF é obrigatório por compliance financeiro
     const customer = await createOrGetCustomer(
       donorName || 'Apoiador Pandemic Monitor',
-      '00000000000', // CPF genérico para doações PIX públicas
+      cpfCnpj,
     );
 
     // Criar cobrança PIX
